@@ -17,6 +17,9 @@
 package minio
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -25,6 +28,102 @@ import (
 	"sync"
 	"time"
 )
+
+const (
+	AmzHeaderIV      = "X-Amz-Meta-X-Amz-Iv"
+	AmzHeaderKey     = "X-Amz-Meta-X-Amz-Key"
+	AmzHeaderMatDesc = "X-Amz-Meta-X-Amz-Matdesc"
+)
+
+// GetSecuredObject returns a readable object
+func (c Client) GetSecuredObject(bucketName, objectName string, encKey EncryptionKey) (io.Reader, error) {
+
+	// Fetch encrypted object
+	encReader, err := c.GetObject(bucketName, objectName)
+	if err != nil {
+		return nil, err
+	}
+	// Stat object to get its encryption metadata
+	st, err := encReader.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get IV
+	iv, err := base64.StdEncoding.DecodeString(st.Metadata.Get(AmzHeaderIV))
+	if err != nil {
+		return nil, err
+	}
+
+	// Get encrypted content key
+	encContentKey, err := base64.StdEncoding.DecodeString(st.Metadata.Get(AmzHeaderKey))
+	if err != nil {
+		return nil, err
+	}
+
+	// Decrypt content key
+	contentKey, err := encKey.Decrypt(encContentKey)
+	if err != nil {
+		return nil, err
+	}
+
+	// Prepare block decrypter
+	contentBlock, err := aes.NewCipher(contentKey)
+	if err != nil {
+		return nil, err
+	}
+
+	mode := cipher.NewCBCDecrypter(contentBlock, iv[:aes.BlockSize])
+
+	// Start to decipher, put plain data in the pipe
+	out, in := io.Pipe()
+
+	go func() {
+		plain := make([]byte, aes.BlockSize)
+		cipher := make([]byte, aes.BlockSize)
+
+		// Decrypt block by block
+		for {
+			// Read one crypted block
+			n, rErr := encReader.Read(cipher)
+			if rErr != nil && rErr != io.EOF {
+				in.CloseWithError(rErr)
+				return
+			}
+			// Quit if didn't get any data
+			if n == 0 {
+				break
+			}
+
+			// Decrypt block
+			mode.CryptBlocks(plain, cipher)
+
+			// Unpad data if this is the last block
+			if n < aes.BlockSize || rErr == io.EOF {
+				var pErr error
+				if plain, pErr = pkcs5Unpad(plain, aes.BlockSize); pErr != nil {
+					in.CloseWithError(pErr)
+					return
+				}
+			}
+
+			// Write result
+			if _, werr := in.Write(plain); werr != nil {
+				in.CloseWithError(werr)
+				return
+			}
+
+			// Quit if this is the last block
+			if n < aes.BlockSize || rErr == io.EOF {
+				break
+			}
+		}
+
+		in.Close()
+	}()
+
+	return out, nil
+}
 
 // GetObject - returns an seekable, readable object.
 func (c Client) GetObject(bucketName, objectName string) (*Object, error) {

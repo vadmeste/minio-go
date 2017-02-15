@@ -17,6 +17,10 @@
 package minio
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
 	"io"
 	"strings"
 
@@ -28,6 +32,87 @@ func (c Client) PutObjectWithProgress(bucketName, objectName string, reader io.R
 	metaData := make(map[string][]string)
 	metaData["Content-Type"] = []string{contentType}
 	return c.PutObjectWithMetadata(bucketName, objectName, reader, metaData, progress)
+}
+
+// PutSecureObject - Encrypt and store object.
+func (c Client) PutSecuredObject(bucketName, objectName string, reader io.Reader, encKey EncryptionKey, metaData map[string][]string, progress io.Reader) (n int64, err error) {
+
+	// Generate random content key
+	randContentKey := make([]byte, aes.BlockSize*2)
+	if _, err = rand.Read(randContentKey); err != nil {
+		return 0, err
+	}
+
+	// Generate random IV
+	iv := make([]byte, aes.BlockSize)
+	if _, err = rand.Read(iv); err != nil {
+		return 0, err
+	}
+
+	// Build CBC encrypted based on the random content key
+	encContentBlock, err := aes.NewCipher(randContentKey)
+	if err != nil {
+		return 0, err
+	}
+	mode := cipher.NewCBCEncrypter(encContentBlock, iv)
+
+	// Start to stream encrypted data to pass to the standard PutObject()
+	out, in := io.Pipe()
+
+	go func() {
+		plainPart := make([]byte, aes.BlockSize)
+		cipherPart := make([]byte, aes.BlockSize)
+
+		var pErr, rErr, wErr error
+		var n int
+
+		for {
+			// Read plain data
+			if n, rErr = io.ReadFull(reader, plainPart); rErr != nil && rErr != io.EOF && rErr != io.ErrUnexpectedEOF {
+				in.CloseWithError(err)
+				return
+			}
+
+			// Pad data if this is the last part
+			if n < aes.BlockSize {
+				if plainPart, pErr = pkcs5Pad(plainPart[:n], aes.BlockSize); pErr != nil {
+					in.CloseWithError(pErr)
+					return
+				}
+			}
+
+			// Crypt data
+			mode.CryptBlocks(cipherPart, plainPart)
+
+			// Write crypted data to the pipe
+			if _, wErr = in.Write(cipherPart); wErr != nil {
+				in.CloseWithError(wErr)
+				return
+			}
+
+			// Quit if we are at the end of the stream
+			if n == 0 || (n > 0 && (rErr == io.EOF || rErr == io.ErrUnexpectedEOF)) {
+				break
+			}
+		}
+		in.Close()
+	}()
+
+	if metaData == nil {
+		metaData = make(map[string][]string)
+	}
+
+	// Encrypt content key
+	encryptedKey, err := encKey.Encrypt(randContentKey)
+	if err != nil {
+		return 0, err
+	}
+
+	metaData[AmzHeaderMatDesc] = []string{"{}"}
+	metaData[AmzHeaderIV] = []string{base64.StdEncoding.EncodeToString(iv)}
+	metaData[AmzHeaderKey] = []string{base64.StdEncoding.EncodeToString(encryptedKey)}
+
+	return c.PutObjectWithMetadata(bucketName, objectName, out, metaData, progress)
 }
 
 // PutObjectWithMetadata - with metadata.
