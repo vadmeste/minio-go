@@ -32,7 +32,7 @@ func (c Client) PutObjectWithProgress(bucketName, objectName string, reader io.R
 }
 
 // PutSecureObject - Encrypt and store object.
-func (c Client) PutSecuredObject(bucketName, objectName string, reader io.Reader, securedObj *SecuredObject, metaData map[string][]string, progress io.Reader) (n int64, err error) {
+func (c Client) PutSecuredObject(bucketName, objectName string, reader io.Reader, securedObj SecuredObject, metaData map[string][]string, progress io.Reader) (n int64, err error) {
 
 	if securedObj == nil {
 		return 0, errors.New("secured object is nil")
@@ -48,11 +48,16 @@ func (c Client) PutSecuredObject(bucketName, objectName string, reader io.Reader
 		metaData = make(map[string][]string)
 	}
 
-	matD, iv, key := securedObj.GetMetadata()
+	/*
+		matD, iv, key := securedObj.GetMetadata()
+		metaData[AmzHeaderMatDesc] = []string{matD}
+		metaData[AmzHeaderIV] = []string{iv}
+		metaData[AmzHeaderKey] = []string{key}
+	*/
 
-	metaData[AmzHeaderMatDesc] = []string{matD}
-	metaData[AmzHeaderIV] = []string{iv}
-	metaData[AmzHeaderKey] = []string{key}
+	for k, v := range securedObj.GetMetadata() {
+		metaData[k] = v
+	}
 
 	return c.PutObjectWithMetadata(bucketName, objectName, securedObj, metaData, progress)
 }

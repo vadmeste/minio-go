@@ -1812,12 +1812,11 @@ func TestEncryptionPutGet(t *testing.T) {
 
 	// Generate a new random bucket name.
 	bucketName := randString(60, rand.NewSource(time.Now().UnixNano()), "minio-go-test")
-	bucketName = "mybucket"
 
 	// Make a new bucket.
 	err = c.MakeBucket(bucketName, "us-east-1")
 	if err != nil {
-		// t.Fatal("Error:", err, bucketName)
+		t.Fatal("Error:", err, bucketName)
 	}
 
 	// Generate a symmetric key
@@ -1871,8 +1870,6 @@ func TestEncryptionPutGet(t *testing.T) {
 	// Object custom metadata
 	customContentType := "custom/contenttype"
 
-	fmt.Printf("%v %v\n", asymKey, customContentType)
-
 	testCases := []struct {
 		buf    []byte
 		encKey EncryptionKey
@@ -1882,6 +1879,7 @@ func TestEncryptionPutGet(t *testing.T) {
 		{encKey: symKey, buf: bytes.Repeat([]byte("F"), 15)},
 		{encKey: symKey, buf: bytes.Repeat([]byte("F"), 16)},
 		{encKey: symKey, buf: bytes.Repeat([]byte("F"), 17)},
+		{encKey: symKey, buf: bytes.Repeat([]byte("F"), 31)},
 		{encKey: symKey, buf: bytes.Repeat([]byte("F"), 32)},
 		{encKey: symKey, buf: bytes.Repeat([]byte("F"), 33)},
 		{encKey: symKey, buf: bytes.Repeat([]byte("F"), 1024)},
@@ -1890,23 +1888,18 @@ func TestEncryptionPutGet(t *testing.T) {
 
 		{encKey: asymKey, buf: bytes.Repeat([]byte("F"), 0)},
 		{encKey: asymKey, buf: bytes.Repeat([]byte("F"), 1)},
-		{encKey: asymKey, buf: bytes.Repeat([]byte("F"), 15)},
 		{encKey: asymKey, buf: bytes.Repeat([]byte("F"), 16)},
-		{encKey: asymKey, buf: bytes.Repeat([]byte("F"), 17)},
 		{encKey: asymKey, buf: bytes.Repeat([]byte("F"), 32)},
-		{encKey: asymKey, buf: bytes.Repeat([]byte("F"), 33)},
 		{encKey: asymKey, buf: bytes.Repeat([]byte("F"), 1024)},
-		{encKey: asymKey, buf: bytes.Repeat([]byte("F"), 1024*2)},
 		{encKey: asymKey, buf: bytes.Repeat([]byte("F"), 1024*1024)},
 	}
 
 	for i, testCase := range testCases {
 		// Generate a random object name
 		objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
-		objectName = "myobject"
 
 		// Secured object
-		securedObj := NewSecuredObject(testCase.encKey)
+		securedObj := NewCBCSecuredObject(testCase.encKey)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1937,18 +1930,18 @@ func TestEncryptionPutGet(t *testing.T) {
 		}
 
 		// Remove test object
-		/* err = c.RemoveObject(bucketName, objectName)
+		err = c.RemoveObject(bucketName, objectName)
 		if err != nil {
 			t.Fatalf("Test %d, error: %v", i+1, err)
-		} */
+		}
 
 	}
 
 	// Remove test bucket
-	/* err = c.RemoveBucket(bucketName)
+	err = c.RemoveBucket(bucketName)
 	if err != nil {
 		t.Fatal("Error:", err)
-	} */
+	}
 
 }
 

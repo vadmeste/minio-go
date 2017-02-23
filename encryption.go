@@ -26,6 +26,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
+	"net/http"
 )
 
 // Unpad a set of bytes following PKCS5 algorithm
@@ -183,7 +184,17 @@ func NewAsymmetricKey(privData []byte, pubData []byte) (*AsymmetricKey, error) {
 	}, nil
 }
 
-type SecuredObject struct {
+type SecuredObject interface {
+	Read(b []byte) (int, error)
+
+	GetMetadata() map[string][]string
+
+	setEncryptMode() error
+	setDecryptMode(http.Header) error
+	setStream(io.Reader)
+}
+
+type CBCSecuredObject struct {
 	stream    io.Reader
 	streamErr error
 
@@ -205,8 +216,8 @@ type SecuredObject struct {
 	padInput bool
 }
 
-func NewSecuredObject(key EncryptionKey) *SecuredObject {
-	return &SecuredObject{
+func NewCBCSecuredObject(key EncryptionKey) *CBCSecuredObject {
+	return &CBCSecuredObject{
 		srcBuf:        bytes.NewBuffer([]byte{}),
 		dstBuf:        bytes.NewBuffer([]byte{}),
 		encryptionKey: key,
@@ -214,11 +225,11 @@ func NewSecuredObject(key EncryptionKey) *SecuredObject {
 	}
 }
 
-func (s *SecuredObject) setStream(stream io.Reader) {
+func (s *CBCSecuredObject) setStream(stream io.Reader) {
 	s.stream = stream
 }
 
-func (s *SecuredObject) setEncryptMode() error {
+func (s *CBCSecuredObject) setEncryptMode() error {
 
 	var err error
 
@@ -255,7 +266,7 @@ func (s *SecuredObject) setEncryptMode() error {
 	return nil
 }
 
-func (s *SecuredObject) setDecryptMode(cryptedKey, iv []byte) error {
+func (s *CBCSecuredObject) setDecryptMode(metadata http.Header) error {
 	var err error
 
 	s.srcBuf.Reset()
@@ -263,8 +274,17 @@ func (s *SecuredObject) setDecryptMode(cryptedKey, iv []byte) error {
 
 	s.EOF = false
 
-	s.iv = iv
-	s.cryptedKey = cryptedKey
+	// Get IV
+	s.iv, err = base64.StdEncoding.DecodeString(metadata.Get(AmzHeaderIV))
+	if err != nil {
+		return err
+	}
+
+	// Get encrypted content key
+	s.cryptedKey, err = base64.StdEncoding.DecodeString(metadata.Get(AmzHeaderKey))
+	if err != nil {
+		return err
+	}
 
 	// Decrypt content key
 	s.contentKey, err = s.encryptionKey.Decrypt(s.cryptedKey)
@@ -285,7 +305,7 @@ func (s *SecuredObject) setDecryptMode(cryptedKey, iv []byte) error {
 	return nil
 }
 
-func (s *SecuredObject) Read(buf []byte) (n int, err error) {
+func (s *CBCSecuredObject) Read(buf []byte) (n int, err error) {
 
 	// Always fill buf from bufChunk at the end of this function
 	defer func() {
@@ -350,8 +370,10 @@ func (s *SecuredObject) Read(buf []byte) (n int, err error) {
 	return
 }
 
-func (s *SecuredObject) GetMetadata() (string, string, string) {
-	return string(s.matDesc),
-		base64.StdEncoding.EncodeToString(s.iv),
-		base64.StdEncoding.EncodeToString(s.cryptedKey)
+func (s *CBCSecuredObject) GetMetadata() map[string][]string {
+	m := make(map[string][]string)
+	m[AmzHeaderMatDesc] = []string{string(s.matDesc)}
+	m[AmzHeaderIV] = []string{base64.StdEncoding.EncodeToString(s.iv)}
+	m[AmzHeaderKey] = []string{base64.StdEncoding.EncodeToString(s.cryptedKey)}
+	return m
 }

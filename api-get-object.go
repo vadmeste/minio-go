@@ -17,7 +17,6 @@
 package minio
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -34,7 +33,7 @@ const (
 )
 
 // GetSecuredObject returns a readable object
-func (c Client) GetSecuredObject(bucketName, objectName string, securedObject *SecuredObject) (io.Reader, error) {
+func (c Client) GetSecuredObject(bucketName, objectName string, securedObject SecuredObject) (io.Reader, error) {
 
 	if securedObject == nil {
 		return nil, errors.New("cannot deal with nil secure object")
@@ -51,20 +50,8 @@ func (c Client) GetSecuredObject(bucketName, objectName string, securedObject *S
 		return nil, err
 	}
 
-	// Get IV
-	iv, err := base64.StdEncoding.DecodeString(st.Metadata.Get(AmzHeaderIV))
-	if err != nil {
-		return nil, err
-	}
-
-	// Get encrypted content key
-	encryptedContentKey, err := base64.StdEncoding.DecodeString(st.Metadata.Get(AmzHeaderKey))
-	if err != nil {
-		return nil, err
-	}
-
-	securedObject.setDecryptMode(encryptedContentKey, iv)
 	securedObject.setStream(encReader)
+	securedObject.setDecryptMode(st.Metadata)
 
 	return securedObject, nil
 }
