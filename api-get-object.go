@@ -17,8 +17,6 @@
 package minio
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -36,7 +34,11 @@ const (
 )
 
 // GetSecuredObject returns a readable object
-func (c Client) GetSecuredObject(bucketName, objectName string, encKey EncryptionKey) (io.Reader, error) {
+func (c Client) GetSecuredObject(bucketName, objectName string, securedObject *SecuredObject) (io.Reader, error) {
+
+	if securedObject == nil {
+		return nil, errors.New("cannot deal with nil secure object")
+	}
 
 	// Fetch encrypted object
 	encReader, err := c.GetObject(bucketName, objectName)
@@ -56,73 +58,16 @@ func (c Client) GetSecuredObject(bucketName, objectName string, encKey Encryptio
 	}
 
 	// Get encrypted content key
-	encContentKey, err := base64.StdEncoding.DecodeString(st.Metadata.Get(AmzHeaderKey))
+	encryptedContentKey, err := base64.StdEncoding.DecodeString(st.Metadata.Get(AmzHeaderKey))
 	if err != nil {
 		return nil, err
 	}
 
-	// Decrypt content key
-	contentKey, err := encKey.Decrypt(encContentKey)
-	if err != nil {
-		return nil, err
-	}
+	securedObject.setDecryptMode(encryptedContentKey, iv)
 
-	// Prepare block decrypter
-	contentBlock, err := aes.NewCipher(contentKey)
-	if err != nil {
-		return nil, err
-	}
+	securedObject.internalReader = encReader
 
-	mode := cipher.NewCBCDecrypter(contentBlock, iv[:aes.BlockSize])
-
-	// Start to decipher, put plain data in the pipe
-	out, in := io.Pipe()
-
-	go func() {
-		plain := make([]byte, aes.BlockSize)
-		cipher := make([]byte, aes.BlockSize)
-
-		// Decrypt block by block
-		for {
-			// Read one crypted block
-			n, rErr := encReader.Read(cipher)
-			if rErr != nil && rErr != io.EOF {
-				in.CloseWithError(rErr)
-				return
-			}
-			// Quit if didn't get any data
-			if n == 0 {
-				break
-			}
-
-			// Decrypt block
-			mode.CryptBlocks(plain, cipher)
-
-			// Unpad data if this is the last block
-			if n < aes.BlockSize || rErr == io.EOF {
-				var pErr error
-				if plain, pErr = pkcs5Unpad(plain, aes.BlockSize); pErr != nil {
-					in.CloseWithError(pErr)
-					return
-				}
-			}
-
-			// Write result
-			if _, werr := in.Write(plain); werr != nil {
-				in.CloseWithError(werr)
-				return
-			}
-
-			// Quit if this is the last block
-			if n < aes.BlockSize || rErr == io.EOF {
-				break
-			}
-		}
-
-		in.Close()
-	}()
-
-	return out, nil
+	return securedObject, nil
 }
 
 // GetObject - returns an seekable, readable object.

@@ -1812,11 +1812,12 @@ func TestEncryptionPutGet(t *testing.T) {
 
 	// Generate a new random bucket name.
 	bucketName := randString(60, rand.NewSource(time.Now().UnixNano()), "minio-go-test")
+	bucketName = "mybucket"
 
 	// Make a new bucket.
 	err = c.MakeBucket(bucketName, "us-east-1")
 	if err != nil {
-		t.Fatal("Error:", err, bucketName)
+		// t.Fatal("Error:", err, bucketName)
 	}
 
 	// Generate a symmetric key
@@ -1870,6 +1871,8 @@ func TestEncryptionPutGet(t *testing.T) {
 	// Object custom metadata
 	customContentType := "custom/contenttype"
 
+	fmt.Printf("%v %v\n", asymKey, customContentType)
+
 	testCases := []struct {
 		buf    []byte
 		encKey EncryptionKey
@@ -1900,16 +1903,22 @@ func TestEncryptionPutGet(t *testing.T) {
 	for i, testCase := range testCases {
 		// Generate a random object name
 		objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
+		objectName = "myobject"
+
+		// Secured object
+		securedObj := NewSecuredObject(testCase.encKey)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		// Put encrypted data
-		_, err = c.PutSecuredObject(bucketName, objectName, bytes.NewReader(testCase.buf), testCase.encKey,
-			map[string][]string{"Content-Type": []string{customContentType}}, nil)
+		_, err = c.PutSecuredObject(bucketName, objectName, bytes.NewReader(testCase.buf), securedObj, map[string][]string{"Content-Type": []string{customContentType}}, nil)
 		if err != nil {
 			t.Fatalf("Test %d, error: %v %v %v", i+1, err, bucketName, objectName)
 		}
 
 		// Read the data back
-		r, err := c.GetSecuredObject(bucketName, objectName, testCase.encKey)
+		r, err := c.GetSecuredObject(bucketName, objectName, securedObj)
 		if err != nil {
 			t.Fatalf("Test %d, error: %v %v %v", i+1, err, bucketName, objectName)
 		}
@@ -1917,7 +1926,7 @@ func TestEncryptionPutGet(t *testing.T) {
 		// Compare the sent object with the received one
 		recvBuffer := bytes.NewBuffer([]byte{})
 		if _, err = io.Copy(recvBuffer, r); err != nil {
-			t.Fatal(err)
+			t.Fatalf("Test %d, error: %v", i+1, err)
 		}
 		if recvBuffer.Len() != len(testCase.buf) {
 			t.Fatalf("Test %d, error: number of bytes of received object does not match, want %v, got %v\n",
@@ -1928,17 +1937,18 @@ func TestEncryptionPutGet(t *testing.T) {
 		}
 
 		// Remove test object
-		err = c.RemoveObject(bucketName, objectName)
+		/* err = c.RemoveObject(bucketName, objectName)
 		if err != nil {
 			t.Fatalf("Test %d, error: %v", i+1, err)
-		}
+		} */
+
 	}
 
 	// Remove test bucket
-	err = c.RemoveBucket(bucketName)
+	/* err = c.RemoveBucket(bucketName)
 	if err != nil {
 		t.Fatal("Error:", err)
-	}
+	} */
 
 }
 

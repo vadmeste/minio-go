@@ -19,15 +19,21 @@ package minio
 import (
 	"bytes"
 	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"errors"
+	"io"
 )
 
 // Unpad a set of bytes following PKCS5 algorithm
 func pkcs5Unpad(buf []byte, blockSize int) ([]byte, error) {
 	len := len(buf)
+	if len == 0 {
+		return nil, errors.New("buffer is empty")
+	}
 	pad := int(buf[len-1])
 	if pad > len || pad > blockSize {
 		return nil, errors.New("invalid padding size")
@@ -60,6 +66,7 @@ func (s *SymmetricKey) Encrypt(plain []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
+
 	// Pad the key before encryption
 	plain, err = pkcs5Pad(plain, aes.BlockSize)
 
@@ -174,4 +181,172 @@ func NewAsymmetricKey(privData []byte, pubData []byte) (*AsymmetricKey, error) {
 		publicKey:  pubKey,
 		privateKey: privKey,
 	}, nil
+}
+
+type SecuredObject struct {
+	internalReader io.Reader
+	internalErr    error
+
+	srcBuf *bytes.Buffer
+	dstBuf *bytes.Buffer
+	EOF    bool
+
+	encryptionKey EncryptionKey
+
+	contentKey []byte
+	cryptedKey []byte
+
+	iv      []byte
+	matDesc []byte
+
+	blockMode cipher.BlockMode
+
+	pad      func([]byte, int) ([]byte, error)
+	padInput bool
+}
+
+func NewSecuredObject(key EncryptionKey) *SecuredObject {
+	return &SecuredObject{
+		srcBuf:        bytes.NewBuffer([]byte{}),
+		dstBuf:        bytes.NewBuffer([]byte{}),
+		encryptionKey: key,
+		matDesc:       []byte("{}"),
+	}
+}
+
+func (s *SecuredObject) setEncryptMode() error {
+
+	var err error
+
+	s.srcBuf.Reset()
+	s.dstBuf.Reset()
+	s.EOF = false
+
+	// Generate random content key
+	s.contentKey = make([]byte, aes.BlockSize*2)
+	if _, err = rand.Read(s.contentKey); err != nil {
+		return err
+	}
+	// Encrypt content key
+	s.cryptedKey, err = s.encryptionKey.Encrypt(s.contentKey)
+	if err != nil {
+		return err
+	}
+	// Generate random IV
+	s.iv = make([]byte, aes.BlockSize)
+	if _, err = rand.Read(s.iv); err != nil {
+		return err
+	}
+	// New cipher
+	encryptContentBlock, err := aes.NewCipher(s.contentKey)
+	if err != nil {
+		return err
+	}
+
+	s.blockMode = cipher.NewCBCEncrypter(encryptContentBlock, s.iv)
+
+	s.pad = pkcs5Pad
+	s.padInput = true
+
+	return nil
+}
+
+func (s *SecuredObject) setDecryptMode(cryptedKey, iv []byte) error {
+	var err error
+
+	s.srcBuf.Reset()
+	s.dstBuf.Reset()
+
+	s.EOF = false
+
+	s.iv = iv
+	s.cryptedKey = cryptedKey
+
+	// Decrypt content key
+	s.contentKey, err = s.encryptionKey.Decrypt(s.cryptedKey)
+	if err != nil {
+		return err
+	}
+
+	// New cipher
+	decryptContentBlock, err := aes.NewCipher(s.contentKey)
+	if err != nil {
+		return err
+	}
+
+	s.blockMode = cipher.NewCBCDecrypter(decryptContentBlock, s.iv)
+	s.pad = pkcs5Unpad
+	s.padInput = false
+
+	return nil
+}
+
+func (s *SecuredObject) Read(buf []byte) (n int, err error) {
+
+	// Always fill buf from bufChunk at the end of this function
+	defer func() {
+		if s.internalErr != nil {
+			n, err = 0, s.internalErr
+		} else {
+			n, err = s.dstBuf.Read(buf)
+		}
+	}()
+
+	if s.EOF {
+		return
+	}
+
+	// Fill dest buffer if its length is less than buf
+	for !s.EOF && s.dstBuf.Len() < len(buf) {
+
+		srcPart := make([]byte, aes.BlockSize)
+		dstPart := make([]byte, aes.BlockSize)
+
+		// Fill src buffer
+		for s.srcBuf.Len() < aes.BlockSize*2 {
+			_, err = io.CopyN(s.srcBuf, s.internalReader, aes.BlockSize)
+			if err != nil {
+				break
+			}
+		}
+
+		if err != nil && err != io.EOF {
+			s.internalErr = err
+			return 0, s.internalErr
+		}
+
+		s.EOF = (err == io.EOF)
+
+		if s.EOF && s.padInput {
+			if srcPart, err = s.pad(s.srcBuf.Bytes(), aes.BlockSize); err != nil {
+				s.internalErr = err
+				return
+			}
+		} else {
+			_, _ = s.srcBuf.Read(srcPart)
+		}
+
+		for len(srcPart) > 0 {
+			s.blockMode.CryptBlocks(dstPart, srcPart[:aes.BlockSize])
+			if s.EOF && !s.padInput && len(srcPart) == aes.BlockSize {
+				dstPart, err = s.pad(dstPart, aes.BlockSize)
+				if err != nil {
+					s.internalErr = err
+					return
+				}
+			}
+			if _, wErr := s.dstBuf.Write(dstPart); wErr != nil {
+				return 0, wErr
+			}
+			srcPart = srcPart[aes.BlockSize:]
+		}
+	}
+
+	return
+}
+
+func (s *SecuredObject) GetMetadata() (string, string, string) {
+	return string(s.matDesc),
+		base64.StdEncoding.EncodeToString(s.iv),
+		base64.StdEncoding.EncodeToString(s.cryptedKey)
 }
