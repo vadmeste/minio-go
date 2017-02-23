@@ -38,7 +38,7 @@ func (c Client) PutSecuredObject(bucketName, objectName string, reader io.Reader
 		return 0, errors.New("secured object is nil")
 	}
 
-	securedObj.internalReader = reader
+	securedObj.setStream(reader)
 
 	if err := securedObj.setEncryptMode(); err != nil {
 		return 0, err

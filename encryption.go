@@ -184,8 +184,8 @@ func NewAsymmetricKey(privData []byte, pubData []byte) (*AsymmetricKey, error) {
 }
 
 type SecuredObject struct {
-	internalReader io.Reader
-	internalErr    error
+	stream    io.Reader
+	streamErr error
 
 	srcBuf *bytes.Buffer
 	dstBuf *bytes.Buffer
@@ -212,6 +212,10 @@ func NewSecuredObject(key EncryptionKey) *SecuredObject {
 		encryptionKey: key,
 		matDesc:       []byte("{}"),
 	}
+}
+
+func (s *SecuredObject) setStream(stream io.Reader) {
+	s.stream = stream
 }
 
 func (s *SecuredObject) setEncryptMode() error {
@@ -285,8 +289,8 @@ func (s *SecuredObject) Read(buf []byte) (n int, err error) {
 
 	// Always fill buf from bufChunk at the end of this function
 	defer func() {
-		if s.internalErr != nil {
-			n, err = 0, s.internalErr
+		if s.streamErr != nil {
+			n, err = 0, s.streamErr
 		} else {
 			n, err = s.dstBuf.Read(buf)
 		}
@@ -304,22 +308,22 @@ func (s *SecuredObject) Read(buf []byte) (n int, err error) {
 
 		// Fill src buffer
 		for s.srcBuf.Len() < aes.BlockSize*2 {
-			_, err = io.CopyN(s.srcBuf, s.internalReader, aes.BlockSize)
+			_, err = io.CopyN(s.srcBuf, s.stream, aes.BlockSize)
 			if err != nil {
 				break
 			}
 		}
 
 		if err != nil && err != io.EOF {
-			s.internalErr = err
-			return 0, s.internalErr
+			s.streamErr = err
+			return
 		}
 
 		s.EOF = (err == io.EOF)
 
 		if s.EOF && s.padInput {
 			if srcPart, err = s.pad(s.srcBuf.Bytes(), aes.BlockSize); err != nil {
-				s.internalErr = err
+				s.streamErr = err
 				return
 			}
 		} else {
@@ -331,12 +335,13 @@ func (s *SecuredObject) Read(buf []byte) (n int, err error) {
 			if s.EOF && !s.padInput && len(srcPart) == aes.BlockSize {
 				dstPart, err = s.pad(dstPart, aes.BlockSize)
 				if err != nil {
-					s.internalErr = err
+					s.streamErr = err
 					return
 				}
 			}
 			if _, wErr := s.dstBuf.Write(dstPart); wErr != nil {
-				return 0, wErr
+				s.streamErr = wErr
+				return
 			}
 			srcPart = srcPart[aes.BlockSize:]
 		}

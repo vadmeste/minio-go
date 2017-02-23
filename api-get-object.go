@@ -64,8 +64,7 @@ func (c Client) GetSecuredObject(bucketName, objectName string, securedObject *S
 	}
 
 	securedObject.setDecryptMode(encryptedContentKey, iv)
-
-	securedObject.internalReader = encReader
+	securedObject.setStream(encReader)
 
 	return securedObject, nil
 }
