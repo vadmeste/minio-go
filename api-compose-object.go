@@ -200,6 +200,15 @@ func NewSourceInfo(bucket, object string, sse encrypt.ServerSide) SourceInfo {
 	return r
 }
 
+// SetVersionID - Set the version ID of the source object
+func (s *SourceInfo) SetVersionID(versionID string) error {
+	if versionID == "" {
+		return ErrInvalidArgument("version ID must be non-empty.")
+	}
+	s.Headers.Set("x-amz-copy-source", s3utils.EncodePath(s.bucket+"/"+s.object)+"?versionId="+versionID)
+	return nil
+}
+
 // SetRange - Set the start and end offset of the source object to be
 // copied. If this method is not called, the whole source object is
 // copied.
