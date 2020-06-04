@@ -1,6 +1,6 @@
 /*
  * MinIO Go Library for Amazon S3 Compatible Cloud Storage
- * Copyright 2015-2017 MinIO, Inc.
+ * Copyright 2015-2020 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,45 @@ type ListBucketV2Result struct {
 	// FetchOwner and StartAfter are currently not used
 	FetchOwner string
 	StartAfter string
+}
+
+// DeleteMarker is an element in the list object versions response
+type DeleteMarker struct {
+	IsLatest     bool
+	Key          string
+	LastModified time.Time
+	Owner        Owner
+	VersionID    string `xml:"VersionId"`
+}
+
+// Version is an element in the list object versions response
+type Version struct {
+	ETag         string
+	IsLatest     bool
+	Key          string
+	LastModified time.Time
+	Owner        Owner
+	Size         int64
+	StorageClass string
+	VersionID    string `xml:"VersionId"`
+}
+
+// ListVersionsResult is an element in the list object versions response
+type ListVersionsResult struct {
+	Versions      []Version      `xml:"Version"`
+	DeleteMarkers []DeleteMarker `xml:"DeleteMarker"`
+
+	CommonPrefixes      []CommonPrefix
+	Name                string
+	Prefix              string
+	Delimiter           string
+	MaxKeys             int64
+	EncodingType        string
+	IsTruncated         bool
+	KeyMarker           string
+	VersionIdMarker     string
+	NextKeyMarker       string
+	NextVersionIdMarker string
 }
 
 // ListBucketResult container for listObjects response.
