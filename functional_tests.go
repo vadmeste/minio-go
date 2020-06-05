@@ -839,7 +839,7 @@ func testStatObjectWithVersioning() {
 	doneCh := make(chan struct{})
 	objectsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
 
-	var results []minio.ObjectInfo
+	var results []minio.ObjectVersionInfo
 	for info := range objectsInfo {
 		if info.Err != nil {
 			logError(testName, function, args, startTime, "", "Unexpected error during listing objects", err)
@@ -960,7 +960,7 @@ func testGetObjectWithVersioning() {
 	doneCh := make(chan struct{})
 	objectsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
 
-	var results []minio.ObjectInfo
+	var results []minio.ObjectVersionInfo
 	for info := range objectsInfo {
 		if info.Err != nil {
 			logError(testName, function, args, startTime, "", "Unexpected error during listing objects", err)
@@ -1165,6 +1165,165 @@ func testCopyObjectWithVersioning() {
 	}
 
 	if len(newestContent) == 0 || !bytes.Equal(oldestContent, newestContent) {
+		logError(testName, function, args, startTime, "", "Unexpected destination object content", err)
+		return
+	}
+
+	// Delete all objects and their versions as long as the bucket itself
+	if err = cleanupVersionedBucket(bucketName, c); err != nil {
+		logError(testName, function, args, startTime, "", "Cleanup failed", err)
+		return
+	}
+
+	successLogger(testName, function, args, startTime).Info()
+}
+
+func testComposeObjectWithVersioning() {
+	// initialize logging params
+	startTime := time.Now()
+	testName := getFuncName()
+	function := "ComposeObject()"
+	args := map[string]interface{}{}
+
+	// Seed random based on current time.
+	rand.Seed(time.Now().Unix())
+
+	// Instantiate new minio client object.
+	c, err := minio.New(
+		os.Getenv(serverEndpoint),
+		os.Getenv(accessKey),
+		os.Getenv(secretKey),
+		mustParseBool(os.Getenv(enableHTTPS)),
+	)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "MinIO client object creation failed", err)
+		return
+	}
+
+	// Enable tracing, write to stderr.
+	c.TraceOn(os.Stderr)
+
+	// Set user agent.
+	c.SetAppInfo("MinIO-go-FunctionalTest", "0.1.0")
+
+	// Generate a new random bucket name.
+	bucketName := randString(60, rand.NewSource(time.Now().UnixNano()), "minio-go-test-")
+	args["bucketName"] = bucketName
+
+	// Make a new bucket.
+	err = c.MakeBucketWithObjectLock(bucketName, "us-east-1")
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Make bucket failed", err)
+		return
+	}
+
+	defer func() {
+		// Delete all objects and their versions as long as the bucket itself
+		if err = cleanupVersionedBucket(bucketName, c); err != nil {
+			logError(testName, function, args, startTime, "", "Cleanup failed", err)
+			return
+		}
+	}()
+
+	err = c.EnableVersioning(bucketName)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Enable versioning failed", err)
+		return
+	}
+
+	objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
+	args["objectName"] = objectName
+
+	// var testFiles = []string{"datafile-5-MB", "datafile-10-kB"}
+	var testFiles = []string{"datafile-5-MB", "datafile-10-kB"}
+	var testFilesBytes [][]byte
+
+	for _, testFile := range testFiles {
+		r := getDataReader(testFile)
+		buf, err := ioutil.ReadAll(r)
+		if err != nil {
+			logError(testName, function, args, startTime, "", "unexpected failure", err)
+			return
+		}
+		r.Close()
+		n, err := c.PutObject(bucketName, objectName, bytes.NewReader(buf), int64(len(buf)), minio.PutObjectOptions{})
+		if err != nil {
+			logError(testName, function, args, startTime, "", "PutObject failed", err)
+			return
+		}
+		if n != int64(len(buf)) {
+			logError(testName, function, args, startTime, "",
+				"Number of bytes returned by PutObject does not match, expected "+string(len(buf))+" got "+string(n), err)
+			return
+		}
+
+		testFilesBytes = append(testFilesBytes, buf)
+	}
+
+	doneCh := make(chan struct{})
+	objectsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+
+	var results []minio.ObjectVersionInfo
+	for info := range objectsInfo {
+		if info.Err != nil {
+			logError(testName, function, args, startTime, "", "Unexpected error during listing objects", err)
+			return
+		}
+		results = append(results, info)
+	}
+
+	sort.SliceStable(results, func(i, j int) bool {
+		return results[i].Size > results[j].Size
+	})
+
+	fmt.Printf("%+v", results)
+
+	// Source objects to concatenate. We also specify decryption
+	// key for each
+	src1 := minio.NewSourceInfo(bucketName, objectName, nil)
+	src1.SetVersionID(results[0].VersionID)
+	src2 := minio.NewSourceInfo(bucketName, objectName, nil)
+	src2.SetVersionID(results[1].VersionID)
+
+	// Create slice of sources.
+	srcs := []minio.SourceInfo{src1, src2}
+
+	// Create destination info
+	dst, err := minio.NewDestinationInfo(bucketName, objectName+"-copy", nil, nil)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "NewDestinationInfo failed", err)
+		return
+	}
+
+	err = c.ComposeObject(dst, srcs)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "ComposeObject failed", err)
+		return
+	}
+
+	// Destination object
+	readerCopy, err := c.GetObject(bucketName, objectName+"-copy", minio.GetObjectOptions{})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "GetObject of the copy object failed", err)
+		return
+	}
+	defer readerCopy.Close()
+
+	copyContentBytes, err := ioutil.ReadAll(readerCopy)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Reading from the copy object reader failed", err)
+		return
+	}
+
+	var expectedContent []byte
+	for _, fileBytes := range testFilesBytes {
+		expectedContent = append(expectedContent, fileBytes...)
+	}
+
+	fmt.Println(">>> copyContentBytes =", len(copyContentBytes))
+	fmt.Println(">>> expectedContent = ", len(expectedContent))
+
+	if len(copyContentBytes) == 0 || !bytes.Equal(copyContentBytes, expectedContent) {
 		logError(testName, function, args, startTime, "", "Unexpected destination object content", err)
 		return
 	}
@@ -10941,6 +11100,9 @@ func main() {
 	log.SetFormatter(&mintFormatter)
 	// log Info or above -- success cases are Info level, failures are Fatal level
 	log.SetLevel(log.InfoLevel)
+
+	testComposeObjectWithVersioning()
+	return
 
 	tls := mustParseBool(os.Getenv(enableHTTPS))
 	kmsEnabled := mustParseBool(os.Getenv(enableKMS))
