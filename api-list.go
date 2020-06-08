@@ -425,8 +425,7 @@ func (c Client) ListObjects(ctx context.Context, bucketName, objectPrefix string
 
 // ListObjectVersions - List versions of some objects or all recursively.
 //
-//   TODO: update the documentation here
-//
+// e.g.:
 //   api := client.New(....)
 //   // Create a done channel.
 //   doneCh := make(chan struct{})
@@ -436,8 +435,6 @@ func (c Client) ListObjects(ctx context.Context, bucketName, objectPrefix string
 //   for message := range api.ListObjectVersions("mytestbucket", "starthere", recursive, doneCh) {
 //       fmt.Println(message)
 //   }
-//
-
 func (c Client) ListObjectVersions(bucketName, prefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectVersionInfo {
 	// Allocate new list objects channel.
 	resultCh := make(chan ObjectVersionInfo, 1)
@@ -470,10 +467,10 @@ func (c Client) ListObjectVersions(bucketName, prefix string, recursive bool, do
 	go func(resultCh chan<- ObjectVersionInfo) {
 		defer close(resultCh)
 
-		var keyMarker, versionIdMarker string
+		var keyMarker, versionIDMarker string
 		for {
 			// Get list of objects a maximum of 1000 per request.
-			result, err := c.listObjectVersionsQuery(bucketName, prefix, keyMarker, versionIdMarker, delimiter, 0)
+			result, err := c.listObjectVersionsQuery(bucketName, prefix, keyMarker, versionIDMarker, delimiter, 0)
 			if err != nil {
 				resultCh <- ObjectVersionInfo{
 					Err: err,
@@ -539,8 +536,8 @@ func (c Client) ListObjectVersions(bucketName, prefix string, recursive bool, do
 			}
 
 			// If next version id marker is present, save it for next request.
-			if result.NextVersionIdMarker != "" {
-				versionIdMarker = result.NextVersionIdMarker
+			if result.NextVersionIDMarker != "" {
+				versionIDMarker = result.NextVersionIDMarker
 			}
 
 			// Listing ends result is not truncated, return right here.
@@ -563,7 +560,7 @@ func (c Client) ListObjectVersions(bucketName, prefix string, recursive bool, do
 // ?delimiter - A delimiter is a character you use to group keys.
 // ?prefix - Limits the response to keys that begin with the specified prefix.
 // ?max-keys - Sets the maximum number of keys returned in the response body.
-func (c Client) listObjectVersionsQuery(bucketName, prefix, keyMarker, versionIdMarker, delimiter string, maxkeys int) (ListVersionsResult, error) {
+func (c Client) listObjectVersionsQuery(bucketName, prefix, keyMarker, versionIDMarker, delimiter string, maxkeys int) (ListVersionsResult, error) {
 	// Validate bucket name.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return ListVersionsResult{}, err
@@ -596,8 +593,8 @@ func (c Client) listObjectVersionsQuery(bucketName, prefix, keyMarker, versionId
 	}
 
 	// Set version ID marker
-	if versionIdMarker != "" {
-		urlValues.Set("version-id-marker", versionIdMarker)
+	if versionIDMarker != "" {
+		urlValues.Set("version-id-marker", versionIDMarker)
 	}
 
 	// Always set encoding-type

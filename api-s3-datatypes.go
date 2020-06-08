@@ -105,9 +105,9 @@ type ListVersionsResult struct {
 	EncodingType        string
 	IsTruncated         bool
 	KeyMarker           string
-	VersionIdMarker     string
+	VersionIDMarker     string `xml:"VersionIdMarker"`
 	NextKeyMarker       string
-	NextVersionIdMarker string
+	NextVersionIDMarker string `xml:"NextVersionIdMarker"`
 }
 
 // ListBucketResult container for listObjects response.

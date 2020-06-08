@@ -22,6 +22,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -1461,40 +1462,136 @@ func testObjectTaggingWithVersioning() {
 	objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
 	args["objectName"] = objectName
 
-	n, err := c.PutObject(bucketName, objectName, getDataReader("datafile-10-kB"), int64(dataFileMap["datafile-10-kB"]), minio.PutObjectOptions{})
-	if err != nil {
-		logError(testName, function, args, startTime, "", "PutObject failed", err)
-		return
-	}
-	if n != int64(dataFileMap["datafile-10-kB"]) {
-		logError(testName, function, args, startTime, "",
-			"Number of bytes returned by PutObject does not match, expected "+string(dataFileMap["datafile-10-kB"])+" got "+string(n), err)
-		return
+	for _, file := range []string{"datafile-1-b", "datafile-10-kB"} {
+		n, err := c.PutObject(bucketName, objectName, getDataReader(file), int64(dataFileMap[file]), minio.PutObjectOptions{})
+		if err != nil {
+			logError(testName, function, args, startTime, "", "PutObject failed", err)
+			return
+		}
+		if n != int64(dataFileMap[file]) {
+			logError(testName, function, args, startTime, "",
+				"Number of bytes returned by PutObject does not match, expected "+string(dataFileMap[file])+" got "+string(n), err)
+			return
+		}
 	}
 
 	doneCh := make(chan struct{})
 	versionsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
 
-	var objectVersionInfo minio.ObjectVersionInfo
+	var versions []minio.ObjectVersionInfo
 	for info := range versionsInfo {
 		if info.Err != nil {
 			logError(testName, function, args, startTime, "", "Unexpected error during listing objects", err)
 			return
 		}
-		objectVersionsInfo = info
-		break
+		versions = append(versions, info)
 	}
 
-	err = c.RemoveObjectWithOptions(bucketName, objectName, minio.RemoveObjectOptions{VersionID: version.VersionID})
+	sort.SliceStable(versions, func(i, j int) bool {
+		return versions[i].Size < versions[j].Size
+	})
+
+	tagsV1 := map[string]string{"key1": "val1"}
+	err = c.PutObjectTaggingWithOptions(context.Background(), bucketName, objectName, tagsV1, minio.PutObjectTaggingOptions{VersionID: versions[0].VersionID})
 	if err != nil {
-		logError(testName, function, args, startTime, "", "DeleteObject failed", err)
+		logError(testName, function, args, startTime, "", "PutObjectTaggingWithOptions (1) failed", err)
 		return
 	}
 
-	doneCh = make(chan struct{})
-	objectsInfo = c.ListObjectVersions(bucketName, "", true, doneCh)
-	for range objectsInfo {
-		logError(testName, function, args, startTime, "", "Unexpected versioning info, should not have any one ", err)
+	tagsV2 := map[string]string{"key2": "val2"}
+	err = c.PutObjectTaggingWithOptions(context.Background(), bucketName, objectName, tagsV2, minio.PutObjectTaggingOptions{VersionID: versions[1].VersionID})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "PutObjectTaggingWithOptions (2) failed", err)
+		return
+	}
+
+	type Tag struct {
+		Key   string
+		Value string
+	}
+
+	type TagSet struct {
+		Tag []Tag
+	}
+
+	type GetObjectTaggingOutput struct {
+		TagSet TagSet
+	}
+
+	tagsEqual := func(tags map[string]string, getObjectTagging GetObjectTaggingOutput) bool {
+		for k, v := range tags {
+			found := false
+			for _, t := range getObjectTagging.TagSet.Tag {
+				if k+"="+v == t.Key+"="+t.Value {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return false
+			}
+		}
+		return true
+	}
+
+	tagsV1XML, err := c.GetObjectTaggingWithOptions(context.Background(), bucketName, objectName, minio.GetObjectTaggingOptions{VersionID: versions[0].VersionID})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "GetObjectTaggingWithOptions failed", err)
+		return
+	}
+
+	var getObjectTaggingV1 GetObjectTaggingOutput
+	err = xml.Unmarshal([]byte(tagsV1XML), &getObjectTaggingV1)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Unexpected error during XML unmarshal (1)", err)
+		return
+	}
+
+	if !tagsEqual(tagsV1, getObjectTaggingV1) {
+		logError(testName, function, args, startTime, "", "Unexpected tags content (1)", err)
+		return
+	}
+
+	tagsV2XML, err := c.GetObjectTaggingWithContext(context.Background(), bucketName, objectName)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "GetObjectTaggingWithContext failed", err)
+		return
+	}
+
+	var getObjectTaggingV2 GetObjectTaggingOutput
+	err = xml.Unmarshal([]byte(tagsV2XML), &getObjectTaggingV2)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Unexpected error during XML unmarshal (2)", err)
+		return
+	}
+
+	if !tagsEqual(tagsV2, getObjectTaggingV2) {
+		logError(testName, function, args, startTime, "", "Unexpected tags content (2)", err)
+		return
+	}
+
+	err = c.RemoveObjectTaggingWithOptions(context.Background(), bucketName, objectName, minio.RemoveObjectTaggingOptions{VersionID: versions[0].VersionID})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "PutObjectTaggingWithOptions (2) failed", err)
+		return
+	}
+
+	emptyTagsXML, err := c.GetObjectTaggingWithOptions(context.Background(), bucketName, objectName,
+		minio.GetObjectTaggingOptions{VersionID: versions[0].VersionID})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "GetObjectTaggingWithOptions failed", err)
+		return
+	}
+
+	var getObjectExpectedEmptyTagging GetObjectTaggingOutput
+	err = xml.Unmarshal([]byte(emptyTagsXML), &getObjectExpectedEmptyTagging)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Unexpected error during XML unmarshal (3)", err)
+		return
+	}
+
+	if len(getObjectExpectedEmptyTagging.TagSet.Tag) != 0 {
+		logError(testName, function, args, startTime, "", "Unexpected tags content (2)", err)
 		return
 	}
 
