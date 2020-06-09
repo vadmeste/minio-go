@@ -28,14 +28,13 @@ import (
 	"github.com/minio/minio-go/v6/pkg/s3utils"
 )
 
-// CopyObject - copy a source object into a new object
-func (c Client) CopyObject(dst DestinationInfo, src SourceInfo) error {
-	return c.CopyObjectWithProgress(dst, src, nil)
+type CopyObjectOptions struct {
+	Progress io.Reader
 }
 
-// CopyObjectWithProgress - copy a source object into a new object, optionally takes
+// CopyObject - copy a source object into a new object, optionally takes
 // progress bar input to notify current progress.
-func (c Client) CopyObjectWithProgress(dst DestinationInfo, src SourceInfo, progress io.Reader) error {
+func (c Client) CopyObject(ctx context.Context, dst DestinationInfo, src SourceInfo, opts CopyObjectOptions) error {
 	header := make(http.Header)
 	for k, v := range src.Headers {
 		header[k] = v
@@ -58,7 +57,7 @@ func (c Client) CopyObjectWithProgress(dst DestinationInfo, src SourceInfo, prog
 	var err error
 	var size int64
 	// If progress bar is specified, size should be requested as well initiate a StatObject request.
-	if progress != nil {
+	if opts.Progress != nil {
 		size, _, _, err = src.getProps(c)
 		if err != nil {
 			return err
@@ -91,8 +90,8 @@ func (c Client) CopyObjectWithProgress(dst DestinationInfo, src SourceInfo, prog
 	}
 
 	// Update the progress properly after successful copy.
-	if progress != nil {
-		io.CopyN(ioutil.Discard, progress, size)
+	if opts.Progress != nil {
+		io.CopyN(ioutil.Discard, opts.Progress, size)
 	}
 
 	return nil

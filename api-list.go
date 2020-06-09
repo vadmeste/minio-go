@@ -59,43 +59,6 @@ func (c Client) ListBuckets(ctx context.Context) ([]BucketInfo, error) {
 
 /// Bucket Read Operations.
 
-// ListObjectsV2WithMetadata lists all objects matching the objectPrefix
-// from the specified bucket. If recursion is enabled it would list
-// all subdirectories and all its contents. This call adds
-// UserMetadata information as well for each object.
-//
-// This is a MinIO extension, this will not work against other S3
-// compatible object storage vendors.
-//
-// Your input parameters are just bucketName, objectPrefix, recursive
-// and a done channel for pro-actively closing the internal go
-// routine. If you enable recursive as 'true' this function will
-// return back all the objects in a given bucket name and object
-// prefix.
-//
-//   api := client.New(....)
-//   // Create a done channel.
-//   doneCh := make(chan struct{})
-//   defer close(doneCh)
-//   // Recursively list all objects in 'mytestbucket'
-//   recursive := true
-//   // Add metadata
-//   metadata := true
-//   for message := range api.ListObjectsV2WithMetadata("mytestbucket", "starthere", recursive, doneCh) {
-//       fmt.Println(message)
-//   }
-//
-func (c Client) ListObjectsV2WithMetadata(ctx context.Context, bucketName, objectPrefix string, recursive bool,
-	doneCh <-chan struct{}) <-chan ObjectInfo {
-	// Check whether this is snowball region, if yes ListObjectsV2 doesn't work, fallback to listObjectsV1.
-	if location, ok := c.bucketLocCache.Get(bucketName); ok {
-		if location == "snowball" {
-			return c.ListObjects(ctx, bucketName, objectPrefix, recursive, doneCh)
-		}
-	}
-	return c.listObjectsV2(bucketName, objectPrefix, recursive, true, doneCh)
-}
-
 func (c Client) listObjectsV2(bucketName, objectPrefix string, recursive, metadata bool, doneCh <-chan struct{}) <-chan ObjectInfo {
 	// Allocate new list objects channel.
 	objectStatCh := make(chan ObjectInfo, 1)
@@ -181,6 +144,10 @@ func (c Client) listObjectsV2(bucketName, objectPrefix string, recursive, metada
 	return objectStatCh
 }
 
+type ListObjectsOptions struct {
+	WithMetadata bool
+}
+
 // ListObjectsV2 lists all objects matching the objectPrefix from
 // the specified bucket. If recursion is enabled it would list
 // all subdirectories and all its contents.
@@ -201,14 +168,14 @@ func (c Client) listObjectsV2(bucketName, objectPrefix string, recursive, metada
 //       fmt.Println(message)
 //   }
 //
-func (c Client) ListObjectsV2(ctx context.Context, bucketName, objectPrefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectInfo {
+func (c Client) ListObjectsV2(ctx context.Context, bucketName, objectPrefix string, recursive bool, opts ListObjectsOptions, doneCh <-chan struct{}) <-chan ObjectInfo {
 	// Check whether this is snowball region, if yes ListObjectsV2 doesn't work, fallback to listObjectsV1.
 	if location, ok := c.bucketLocCache.Get(bucketName); ok {
 		if location == "snowball" {
 			return c.ListObjects(ctx, bucketName, objectPrefix, recursive, doneCh)
 		}
 	}
-	return c.listObjectsV2(bucketName, objectPrefix, recursive, false, doneCh)
+	return c.listObjectsV2(bucketName, objectPrefix, recursive, opts.WithMetadata, doneCh)
 }
 
 // listObjectsV2Query - (List Objects V2) - List some or all (up to 1000) of the objects in a bucket.

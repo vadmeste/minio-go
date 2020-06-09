@@ -126,6 +126,11 @@ func (c Client) doMakeBucket(ctx context.Context, bucketName string, location st
 	return nil
 }
 
+type MakeBucketOptions struct {
+	Location string
+	WithLock bool
+}
+
 // MakeBucket creates a new bucket with bucketName with a context to control cancellations and timeouts.
 //
 // Location is an optional argument, by default all buckets are
@@ -133,20 +138,8 @@ func (c Client) doMakeBucket(ctx context.Context, bucketName string, location st
 //
 // For Amazon S3 for more supported regions - http://docs.aws.amazon.com/general/latest/gr/rande.html
 // For Google Cloud Storage for more supported regions - https://cloud.google.com/storage/docs/bucket-locations
-func (c Client) MakeBucket(ctx context.Context, bucketName string, location string) (err error) {
-	return c.makeBucket(ctx, bucketName, location, false)
-}
-
-// MakeBucketWithObjectLock creates a object lock enabled new bucket with bucketName with a context to
-// control cancellations and timeouts.
-//
-// Location is an optional argument, by default all buckets are
-// created in US Standard Region.
-//
-// For Amazon S3 for more supported regions - http://docs.aws.amazon.com/general/latest/gr/rande.html
-// For Google Cloud Storage for more supported regions - https://cloud.google.com/storage/docs/bucket-locations
-func (c Client) MakeBucketWithObjectLock(ctx context.Context, bucketName string, location string) (err error) {
-	return c.makeBucket(ctx, bucketName, location, true)
+func (c Client) MakeBucket(ctx context.Context, bucketName string, opts MakeBucketOptions) (err error) {
+	return c.makeBucket(ctx, bucketName, opts.Location, opts.WithLock)
 }
 
 // SetBucketPolicy set the access permissions on an existing bucket.

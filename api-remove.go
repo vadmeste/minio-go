@@ -58,19 +58,14 @@ func (c Client) RemoveBucket(bucketName string) error {
 	return nil
 }
 
-// RemoveObject remove an object from a bucket.
-func (c Client) RemoveObject(bucketName, objectName string) error {
-	return c.RemoveObjectWithOptions(bucketName, objectName, RemoveObjectOptions{})
-}
-
 // RemoveObjectOptions represents options specified by user for RemoveObject call
 type RemoveObjectOptions struct {
 	GovernanceBypass bool
 	VersionID        string
 }
 
-// RemoveObjectWithOptions removes an object from a bucket.
-func (c Client) RemoveObjectWithOptions(bucketName, objectName string, opts RemoveObjectOptions) error {
+// RemoveObject removes an object from a bucket.
+func (c Client) RemoveObject(ctx context.Context, bucketName, objectName string, opts RemoveObjectOptions) error {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return err
