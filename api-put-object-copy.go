@@ -32,9 +32,17 @@ type CopyObjectOptions struct {
 	Progress io.Reader
 }
 
+type NewObjectResult struct {
+	ETag      string
+	VersionID string
+
+	SourceVersionID_not_sure string    // really? why?
+	Expiration_not_sure      time.Time // x-amz-expiration
+}
+
 // CopyObject - copy a source object into a new object, optionally takes
 // progress bar input to notify current progress.
-func (c Client) CopyObject(ctx context.Context, dst DestinationInfo, src SourceInfo, opts CopyObjectOptions) error {
+func (c Client) CopyObject(ctx context.Context, dst DestinationInfo, src SourceInfo, opts CopyObjectOptions) (NewObjectResult, error) {
 	header := make(http.Header)
 	for k, v := range src.Headers {
 		header[k] = v
@@ -60,7 +68,7 @@ func (c Client) CopyObject(ctx context.Context, dst DestinationInfo, src SourceI
 	if opts.Progress != nil {
 		size, _, _, err = src.getProps(c)
 		if err != nil {
-			return err
+			return NewObjectResult{}, err
 		}
 	}
 
@@ -81,12 +89,12 @@ func (c Client) CopyObject(ctx context.Context, dst DestinationInfo, src SourceI
 		customHeader: header,
 	})
 	if err != nil {
-		return err
+		return NewObjectResult{}, err
 	}
 	defer closeResponse(resp)
 
 	if resp.StatusCode != http.StatusOK {
-		return httpRespToErrorResponse(resp, dst.bucket, dst.object)
+		return NewObjectResult{}, httpRespToErrorResponse(resp, dst.bucket, dst.object)
 	}
 
 	// Update the progress properly after successful copy.
@@ -94,5 +102,5 @@ func (c Client) CopyObject(ctx context.Context, dst DestinationInfo, src SourceI
 		io.CopyN(ioutil.Discard, opts.Progress, size)
 	}
 
-	return nil
+	return NewObjectResult{}, nil
 }

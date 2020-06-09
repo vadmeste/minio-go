@@ -24,10 +24,11 @@ import (
 
 // PutObject - Identical to PutObject call, but accepts context to facilitate request cancellation.
 func (c Client) PutObject(ctx context.Context, bucketName, objectName string, reader io.Reader, objectSize int64,
-	opts PutObjectOptions) (n int64, err error) {
+	opts PutObjectOptions) (ret NewObjectResult, err error) {
 	err = opts.validate()
 	if err != nil {
-		return 0, err
+		return NewObjectResult{}, err
 	}
-	return c.putObjectCommon(ctx, bucketName, objectName, reader, objectSize, opts)
+	_, err = c.putObjectCommon(ctx, bucketName, objectName, reader, objectSize, opts)
+	return NewObjectResult{}, err
 }
