@@ -29,7 +29,7 @@ import (
 )
 
 // GetBucketNotification - get bucket notification at a given path.
-func (c Client) GetBucketNotification(bucketName string) (bucketNotification BucketNotification, err error) {
+func (c Client) GetBucketNotification(ctx context.Context, bucketName string) (bucketNotification BucketNotification, err error) {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return BucketNotification{}, err
@@ -136,7 +136,7 @@ type NotificationInfo struct {
 }
 
 // ListenBucketNotification - listen on bucket notifications.
-func (c Client) ListenBucketNotification(bucketName, prefix, suffix string, events []string, doneCh <-chan struct{}) <-chan NotificationInfo {
+func (c Client) ListenBucketNotification(ctx context.Context, bucketName, prefix, suffix string, events []string, doneCh <-chan struct{}) <-chan NotificationInfo {
 	notificationInfoCh := make(chan NotificationInfo, 1)
 	const notificationCapacity = 1024 * 1024
 	notificationEventBuffer := make([]byte, notificationCapacity)

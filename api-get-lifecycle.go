@@ -27,7 +27,7 @@ import (
 )
 
 // GetBucketLifecycle - get bucket lifecycle.
-func (c Client) GetBucketLifecycle(bucketName string) (string, error) {
+func (c Client) GetBucketLifecycle(ctx context.Context, bucketName string) (string, error) {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return "", err

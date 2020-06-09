@@ -18,6 +18,7 @@
 package minio
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"net/url"
@@ -72,7 +73,7 @@ func (r *bucketLocationCache) Delete(bucketName string) {
 
 // GetBucketLocation - get location for the bucket name from location cache, if not
 // fetch freshly by making a new request.
-func (c Client) GetBucketLocation(bucketName string) (string, error) {
+func (c Client) GetBucketLocation(ctx context.Context, bucketName string) (string, error) {
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return "", err
 	}

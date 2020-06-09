@@ -27,7 +27,7 @@ import (
 )
 
 // GetBucketPolicy - get bucket policy at a given path.
-func (c Client) GetBucketPolicy(bucketName string) (string, error) {
+func (c Client) GetBucketPolicy(ctx context.Context, bucketName string) (string, error) {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return "", err
