@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -157,26 +156,6 @@ type completedParts []CompletePart
 func (a completedParts) Len() int           { return len(a) }
 func (a completedParts) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a completedParts) Less(i, j int) bool { return a[i].PartNumber < a[j].PartNumber }
-
-// PutObject creates an object in a bucket.
-//
-// You must have WRITE permissions on a bucket to create an object.
-//
-//  - For size smaller than 128MiB PutObject automatically does a
-//    single atomic Put operation.
-//  - For size larger than 128MiB PutObject automatically does a
-//    multipart Put operation.
-//  - For size input as -1 PutObject does a multipart Put operation
-//    until input stream reaches EOF. Maximum object size that can
-//    be uploaded through this operation will be 5TiB.
-func (c Client) PutObject(bucketName, objectName string, reader io.Reader, objectSize int64,
-	opts PutObjectOptions) (n int64, err error) {
-	if objectSize < 0 && opts.DisableMultipart {
-		return 0, errors.New("object size must be provided with disable multipart upload")
-	}
-
-	return c.PutObjectWithContext(context.Background(), bucketName, objectName, reader, objectSize, opts)
-}
 
 func (c Client) putObjectCommon(ctx context.Context, bucketName, objectName string, reader io.Reader, size int64, opts PutObjectOptions) (n int64, err error) {
 	// Check for largest object size allowed.

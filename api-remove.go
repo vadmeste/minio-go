@@ -158,34 +158,9 @@ func processRemoveMultiObjectsResponse(body io.Reader, objects []string, errorCh
 	}
 }
 
-// RemoveObjectsWithContext - Identical to RemoveObjects call, but accepts context to facilitate request cancellation.
-func (c Client) RemoveObjectsWithContext(ctx context.Context, bucketName string, objectsCh <-chan string) <-chan RemoveObjectError {
-	errorCh := make(chan RemoveObjectError, 1)
-
-	// Validate if bucket name is valid.
-	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
-		defer close(errorCh)
-		errorCh <- RemoveObjectError{
-			Err: err,
-		}
-		return errorCh
-	}
-	// Validate objects channel to be properly allocated.
-	if objectsCh == nil {
-		defer close(errorCh)
-		errorCh <- RemoveObjectError{
-			Err: errInvalidArgument("Objects channel cannot be nil"),
-		}
-		return errorCh
-	}
-
-	go c.removeObjects(ctx, bucketName, objectsCh, errorCh, RemoveObjectsOptions{})
-	return errorCh
-}
-
-// RemoveObjectsWithOptionsContext - Identical to RemoveObjects call, but accepts context to
+// RemoveObjects - Identical to RemoveObjects call, but accepts context to
 // facilitate request cancellation and options to bypass governance retention
-func (c Client) RemoveObjectsWithOptionsContext(ctx context.Context, bucketName string, objectsCh <-chan string, opts RemoveObjectsOptions) <-chan RemoveObjectError {
+func (c Client) RemoveObjects(ctx context.Context, bucketName string, objectsCh <-chan string, opts RemoveObjectsOptions) <-chan RemoveObjectError {
 	errorCh := make(chan RemoveObjectError, 1)
 
 	// Validate if bucket name is valid.
@@ -282,27 +257,13 @@ func (c Client) removeObjects(ctx context.Context, bucketName string, objectsCh 
 	}
 }
 
-// RemoveObjects removes multiple objects from a bucket.
-// The list of objects to remove are received from objectsCh.
-// Remove failures are sent back via error channel.
-func (c Client) RemoveObjects(bucketName string, objectsCh <-chan string) <-chan RemoveObjectError {
-	return c.RemoveObjectsWithContext(context.Background(), bucketName, objectsCh)
-}
-
 // RemoveObjectsOptions represents options specified by user for RemoveObjects call
 type RemoveObjectsOptions struct {
 	GovernanceBypass bool
 }
 
-// RemoveObjectsWithOptions removes multiple objects from a bucket.
-// The list of objects to remove are received from objectsCh.
-// Remove failures are sent back via error channel.
-func (c Client) RemoveObjectsWithOptions(bucketName string, objectsCh <-chan string, opts RemoveObjectsOptions) <-chan RemoveObjectError {
-	return c.RemoveObjectsWithOptionsContext(context.Background(), bucketName, objectsCh, opts)
-}
-
 // RemoveIncompleteUpload aborts an partially uploaded object.
-func (c Client) RemoveIncompleteUpload(bucketName, objectName string) error {
+func (c Client) RemoveIncompleteUpload(ctx context.Context, bucketName, objectName string) error {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return err

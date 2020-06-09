@@ -22,8 +22,8 @@ import (
 	"io"
 )
 
-// PutObjectWithContext - Identical to PutObject call, but accepts context to facilitate request cancellation.
-func (c Client) PutObjectWithContext(ctx context.Context, bucketName, objectName string, reader io.Reader, objectSize int64,
+// PutObject - Identical to PutObject call, but accepts context to facilitate request cancellation.
+func (c Client) PutObject(ctx context.Context, bucketName, objectName string, reader io.Reader, objectSize int64,
 	opts PutObjectOptions) (n int64, err error) {
 	err = opts.validate()
 	if err != nil {

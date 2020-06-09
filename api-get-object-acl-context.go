@@ -40,8 +40,8 @@ type accessControlPolicy struct {
 	} `xml:"AccessControlList"`
 }
 
-//GetObjectACLWithContext get object ACLs
-func (c Client) GetObjectACLWithContext(ctx context.Context, bucketName, objectName string) (*ObjectInfo, error) {
+//GetObjectACL get object ACLs
+func (c Client) GetObjectACL(ctx context.Context, bucketName, objectName string) (*ObjectInfo, error) {
 	resp, err := c.executeMethod(ctx, "GET", requestMetadata{
 		bucketName: bucketName,
 		objectName: objectName,

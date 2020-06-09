@@ -16,12 +16,3 @@
  */
 
 package minio
-
-import (
-	"context"
-)
-
-//GetObjectACL get object ACLs
-func (c Client) GetObjectACL(bucketName, objectName string) (*ObjectInfo, error) {
-	return c.GetObjectACLWithContext(context.Background(), bucketName, objectName)
-}

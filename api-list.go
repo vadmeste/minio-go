@@ -26,32 +26,18 @@ import (
 	"github.com/minio/minio-go/v6/pkg/s3utils"
 )
 
-// ListBuckets list all buckets owned by this authenticated user.
-//
-// This call requires explicit authentication, no anonymous requests are
-// allowed for listing buckets.
-//
-//   api := client.New(....)
-//   for message := range api.ListBuckets() {
-//       fmt.Println(message)
-//   }
-//
-func (c Client) ListBuckets() ([]BucketInfo, error) {
-	return c.ListBucketsWithContext(context.Background())
-}
-
-// ListBucketsWithContext list all buckets owned by this authenticated user,
+// ListBuckets list all buckets owned by this authenticated user,
 // accepts a context for facilitate cancellation.
 //
 // This call requires explicit authentication, no anonymous requests are
 // allowed for listing buckets.
 //
 //   api := client.New(....)
-//   for message := range api.ListBucketsWithContext(context.Background()) {
+//   for message := range api.ListBuckets(context.Background()) {
 //       fmt.Println(message)
 //   }
 //
-func (c Client) ListBucketsWithContext(ctx context.Context) ([]BucketInfo, error) {
+func (c Client) ListBuckets(ctx context.Context) ([]BucketInfo, error) {
 	// Execute GET on service.
 	resp, err := c.executeMethod(ctx, "GET", requestMetadata{contentSHA256Hex: emptySHA256Hex})
 	defer closeResponse(resp)
@@ -99,12 +85,12 @@ func (c Client) ListBucketsWithContext(ctx context.Context) ([]BucketInfo, error
 //       fmt.Println(message)
 //   }
 //
-func (c Client) ListObjectsV2WithMetadata(bucketName, objectPrefix string, recursive bool,
+func (c Client) ListObjectsV2WithMetadata(ctx context.Context, bucketName, objectPrefix string, recursive bool,
 	doneCh <-chan struct{}) <-chan ObjectInfo {
 	// Check whether this is snowball region, if yes ListObjectsV2 doesn't work, fallback to listObjectsV1.
 	if location, ok := c.bucketLocCache.Get(bucketName); ok {
 		if location == "snowball" {
-			return c.ListObjects(bucketName, objectPrefix, recursive, doneCh)
+			return c.ListObjects(ctx, bucketName, objectPrefix, recursive, doneCh)
 		}
 	}
 	return c.listObjectsV2(bucketName, objectPrefix, recursive, true, doneCh)
@@ -215,11 +201,11 @@ func (c Client) listObjectsV2(bucketName, objectPrefix string, recursive, metada
 //       fmt.Println(message)
 //   }
 //
-func (c Client) ListObjectsV2(bucketName, objectPrefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectInfo {
+func (c Client) ListObjectsV2(ctx context.Context, bucketName, objectPrefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectInfo {
 	// Check whether this is snowball region, if yes ListObjectsV2 doesn't work, fallback to listObjectsV1.
 	if location, ok := c.bucketLocCache.Get(bucketName); ok {
 		if location == "snowball" {
-			return c.ListObjects(bucketName, objectPrefix, recursive, doneCh)
+			return c.ListObjects(ctx, bucketName, objectPrefix, recursive, doneCh)
 		}
 	}
 	return c.listObjectsV2(bucketName, objectPrefix, recursive, false, doneCh)
@@ -356,7 +342,7 @@ func (c Client) listObjectsV2Query(bucketName, objectPrefix, continuationToken s
 //       fmt.Println(message)
 //   }
 //
-func (c Client) ListObjects(bucketName, objectPrefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectInfo {
+func (c Client) ListObjects(ctx context.Context, bucketName, objectPrefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectInfo {
 	// Allocate new list objects channel.
 	objectStatCh := make(chan ObjectInfo, 1)
 	// Default listing is delimited at "/"
@@ -544,7 +530,7 @@ func (c Client) listObjectsQuery(bucketName, objectPrefix, objectMarker, delimit
 //       fmt.Println(message)
 //   }
 //
-func (c Client) ListIncompleteUploads(bucketName, objectPrefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectMultipartInfo {
+func (c Client) ListIncompleteUploads(ctx context.Context, bucketName, objectPrefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectMultipartInfo {
 	// Turn on size aggregation of individual parts.
 	isAggregateSize := true
 	return c.listIncompleteUploads(bucketName, objectPrefix, recursive, isAggregateSize, doneCh)

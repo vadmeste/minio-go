@@ -126,40 +126,18 @@ func (c Client) doMakeBucket(ctx context.Context, bucketName string, location st
 	return nil
 }
 
-// MakeBucket creates a new bucket with bucketName.
+// MakeBucket creates a new bucket with bucketName with a context to control cancellations and timeouts.
 //
 // Location is an optional argument, by default all buckets are
 // created in US Standard Region.
 //
 // For Amazon S3 for more supported regions - http://docs.aws.amazon.com/general/latest/gr/rande.html
 // For Google Cloud Storage for more supported regions - https://cloud.google.com/storage/docs/bucket-locations
-func (c Client) MakeBucket(bucketName string, location string) (err error) {
-	return c.MakeBucketWithContext(context.Background(), bucketName, location)
-}
-
-// MakeBucketWithContext creates a new bucket with bucketName with a context to control cancellations and timeouts.
-//
-// Location is an optional argument, by default all buckets are
-// created in US Standard Region.
-//
-// For Amazon S3 for more supported regions - http://docs.aws.amazon.com/general/latest/gr/rande.html
-// For Google Cloud Storage for more supported regions - https://cloud.google.com/storage/docs/bucket-locations
-func (c Client) MakeBucketWithContext(ctx context.Context, bucketName string, location string) (err error) {
+func (c Client) MakeBucket(ctx context.Context, bucketName string, location string) (err error) {
 	return c.makeBucket(ctx, bucketName, location, false)
 }
 
-// MakeBucketWithObjectLock creates a object lock enabled new bucket with bucketName.
-//
-// Location is an optional argument, by default all buckets are
-// created in US Standard Region.
-//
-// For Amazon S3 for more supported regions - http://docs.aws.amazon.com/general/latest/gr/rande.html
-// For Google Cloud Storage for more supported regions - https://cloud.google.com/storage/docs/bucket-locations
-func (c Client) MakeBucketWithObjectLock(bucketName string, location string) (err error) {
-	return c.MakeBucketWithObjectLockWithContext(context.Background(), bucketName, location)
-}
-
-// MakeBucketWithObjectLockWithContext creates a object lock enabled new bucket with bucketName with a context to
+// MakeBucketWithObjectLock creates a object lock enabled new bucket with bucketName with a context to
 // control cancellations and timeouts.
 //
 // Location is an optional argument, by default all buckets are
@@ -167,17 +145,12 @@ func (c Client) MakeBucketWithObjectLock(bucketName string, location string) (er
 //
 // For Amazon S3 for more supported regions - http://docs.aws.amazon.com/general/latest/gr/rande.html
 // For Google Cloud Storage for more supported regions - https://cloud.google.com/storage/docs/bucket-locations
-func (c Client) MakeBucketWithObjectLockWithContext(ctx context.Context, bucketName string, location string) (err error) {
+func (c Client) MakeBucketWithObjectLock(ctx context.Context, bucketName string, location string) (err error) {
 	return c.makeBucket(ctx, bucketName, location, true)
 }
 
 // SetBucketPolicy set the access permissions on an existing bucket.
-func (c Client) SetBucketPolicy(bucketName, policy string) error {
-	return c.SetBucketPolicyWithContext(context.Background(), bucketName, policy)
-}
-
-// SetBucketPolicyWithContext set the access permissions on an existing bucket.
-func (c Client) SetBucketPolicyWithContext(ctx context.Context, bucketName, policy string) error {
+func (c Client) SetBucketPolicy(ctx context.Context, bucketName, policy string) error {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return err
@@ -256,13 +229,8 @@ func (c Client) removeBucketPolicy(ctx context.Context, bucketName string) error
 	return nil
 }
 
-// SetBucketLifecycle set the lifecycle on an existing bucket.
-func (c Client) SetBucketLifecycle(bucketName, lifecycle string) error {
-	return c.SetBucketLifecycleWithContext(context.Background(), bucketName, lifecycle)
-}
-
-// SetBucketLifecycleWithContext set the lifecycle on an existing bucket with a context to control cancellations and timeouts.
-func (c Client) SetBucketLifecycleWithContext(ctx context.Context, bucketName, lifecycle string) error {
+// SetBucketLifecycle set the lifecycle on an existing bucket with a context to control cancellations and timeouts.
+func (c Client) SetBucketLifecycle(ctx context.Context, bucketName, lifecycle string) error {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return err
@@ -342,13 +310,8 @@ func (c Client) removeBucketLifecycle(ctx context.Context, bucketName string) er
 	return nil
 }
 
-// SetBucketEncryption sets the default encryption configuration on an existing bucket.
-func (c Client) SetBucketEncryption(bucketName string, configuration ServerSideEncryptionConfiguration) error {
-	return c.SetBucketEncryptionWithContext(context.Background(), bucketName, configuration)
-}
-
-// SetBucketEncryptionWithContext sets the default encryption configuration on an existing bucket with a context to control cancellations and timeouts.
-func (c Client) SetBucketEncryptionWithContext(ctx context.Context, bucketName string, configuration ServerSideEncryptionConfiguration) error {
+// SetBucketEncryption sets the default encryption configuration on an existing bucket with a context to control cancellations and timeouts.
+func (c Client) SetBucketEncryption(ctx context.Context, bucketName string, configuration ServerSideEncryptionConfiguration) error {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return err
@@ -385,13 +348,8 @@ func (c Client) SetBucketEncryptionWithContext(ctx context.Context, bucketName s
 	return nil
 }
 
-// DeleteBucketEncryption removes the default encryption configuration on a bucket.
-func (c Client) DeleteBucketEncryption(bucketName string) error {
-	return c.DeleteBucketEncryptionWithContext(context.Background(), bucketName)
-}
-
-// DeleteBucketEncryptionWithContext removes the default encryption configuration on a bucket with a context to control cancellations and timeouts.
-func (c Client) DeleteBucketEncryptionWithContext(ctx context.Context, bucketName string) error {
+// DeleteBucketEncryption removes the default encryption configuration on a bucket with a context to control cancellations and timeouts.
+func (c Client) DeleteBucketEncryption(ctx context.Context, bucketName string) error {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return err
@@ -418,14 +376,9 @@ func (c Client) DeleteBucketEncryptionWithContext(ctx context.Context, bucketNam
 	return nil
 }
 
-// SetBucketNotification saves a new bucket notification.
-func (c Client) SetBucketNotification(bucketName string, bucketNotification BucketNotification) error {
-	return c.SetBucketNotificationWithContext(context.Background(), bucketName, bucketNotification)
-}
-
-// SetBucketNotificationWithContext saves a new bucket notification with a context to control cancellations
+// SetBucketNotification saves a new bucket notification with a context to control cancellations
 // and timeouts.
-func (c Client) SetBucketNotificationWithContext(ctx context.Context, bucketName string, bucketNotification BucketNotification) error {
+func (c Client) SetBucketNotification(ctx context.Context, bucketName string, bucketNotification BucketNotification) error {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return err
@@ -466,8 +419,8 @@ func (c Client) SetBucketNotificationWithContext(ctx context.Context, bucketName
 }
 
 // RemoveAllBucketNotification - Remove bucket notification clears all previously specified config
-func (c Client) RemoveAllBucketNotification(bucketName string) error {
-	return c.SetBucketNotification(bucketName, BucketNotification{})
+func (c Client) RemoveAllBucketNotification(ctx context.Context, bucketName string) error {
+	return c.SetBucketNotification(ctx, bucketName, BucketNotification{})
 }
 
 var (
@@ -516,22 +469,12 @@ func (c Client) setVersioning(ctx context.Context, bucketName string, config []b
 	return nil
 }
 
-// EnableVersioning - Enable object versioning in given bucket.
-func (c Client) EnableVersioning(bucketName string) error {
-	return c.EnableVersioningWithContext(context.Background(), bucketName)
-}
-
-// EnableVersioningWithContext - Enable object versioning in given bucket with a context to control cancellations and timeouts.
-func (c Client) EnableVersioningWithContext(ctx context.Context, bucketName string) error {
+// EnableVersioning - Enable object versioning in given bucket with a context to control cancellations and timeouts.
+func (c Client) EnableVersioning(ctx context.Context, bucketName string) error {
 	return c.setVersioning(ctx, bucketName, versionEnableConfig, versionEnableConfigLen, versionEnableConfigMD5Sum, versionEnableConfigSHA256)
 }
 
-// DisableVersioning - Disable object versioning in given bucket.
-func (c Client) DisableVersioning(bucketName string) error {
-	return c.DisableVersioningWithContext(context.Background(), bucketName)
-}
-
-// DisableVersioningWithContext - Disable object versioning in given bucket with a context to control cancellations and timeouts.
-func (c Client) DisableVersioningWithContext(ctx context.Context, bucketName string) error {
+// DisableVersioning - Disable object versioning in given bucket with a context to control cancellations and timeouts.
+func (c Client) DisableVersioning(ctx context.Context, bucketName string) error {
 	return c.setVersioning(ctx, bucketName, versionDisableConfig, versionDisableConfigLen, versionDisableConfigMD5Sum, versionDisableConfigSHA256)
 }
