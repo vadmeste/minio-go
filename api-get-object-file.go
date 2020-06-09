@@ -52,7 +52,7 @@ func (c Client) fGetObjectWithContext(ctx context.Context, bucketName, objectNam
 	if err == nil {
 		// If the destination exists and is a directory.
 		if st.IsDir() {
-			return ErrInvalidArgument("fileName is a directory.")
+			return errInvalidArgument("fileName is a directory.")
 		}
 	}
 

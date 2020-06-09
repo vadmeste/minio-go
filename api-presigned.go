@@ -32,7 +32,7 @@ import (
 func (c Client) presignURL(method string, bucketName string, objectName string, expires time.Duration, reqParams url.Values) (u *url.URL, err error) {
 	// Input validation.
 	if method == "" {
-		return nil, ErrInvalidArgument("method cannot be empty.")
+		return nil, errInvalidArgument("method cannot be empty.")
 	}
 	if err = s3utils.CheckValidBucketName(bucketName); err != nil {
 		return nil, err
@@ -140,7 +140,7 @@ func (c Client) PresignedPostPolicy(p *PostPolicy) (u *url.URL, formData map[str
 	)
 
 	if signerType.IsAnonymous() {
-		return nil, nil, ErrInvalidArgument("Presigned operations are not supported for anonymous credentials")
+		return nil, nil, errInvalidArgument("Presigned operations are not supported for anonymous credentials")
 	}
 
 	// Keep time.
