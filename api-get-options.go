@@ -25,17 +25,14 @@ import (
 	"github.com/minio/minio-go/v6/pkg/encrypt"
 )
 
+//
+
 // GetObjectOptions are used to specify additional headers or options
 // during GET requests.
 type GetObjectOptions struct {
 	headers              map[string]string
 	ServerSideEncryption encrypt.ServerSide
-}
-
-// StatObjectOptions are used to specify additional headers or options
-// during GET info/stat requests.
-type StatObjectOptions struct {
-	GetObjectOptions
+	VersionID            string
 }
 
 // Header returns the http.Header representation of the GET options.
@@ -125,4 +122,13 @@ func (o *GetObjectOptions) SetRange(start, end int64) error {
 				start, end))
 	}
 	return nil
+}
+
+// StatObjectOptions are used to specify additional headers or options
+// during GET info/stat requests.
+type StatObjectOptions GetObjectOptions
+
+// Header returns the http.Header representation of the GET options.
+func (o StatObjectOptions) Header() http.Header {
+	return GetObjectOptions(o).Header()
 }

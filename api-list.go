@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/minio/minio-go/v6/pkg/s3utils"
 )
@@ -799,4 +800,20 @@ func decodeS3Name(name, encodingType string) (string, error) {
 	default:
 		return name, nil
 	}
+}
+
+type ObjectVersionInfo struct {
+	ETag           string
+	Key            string
+	LastModified   time.Time
+	Size           int64
+	StorageClass   string
+	IsLatest       bool
+	IsDeleteMarker bool
+	VersionID      string
+	Err            error
+}
+
+func (c Client) ListObjectVersions(bucketName, prefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectVersionInfo {
+	return nil
 }

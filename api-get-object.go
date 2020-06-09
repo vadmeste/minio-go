@@ -120,7 +120,7 @@ func (c Client) GtObject(ctx context.Context, bucketName, objectName string, opt
 
 						// Remove range header if already set, for stat Operations to get original file size.
 						delete(opts.headers, "Range")
-						objectInfo, err = c.statObject(ctx, bucketName, objectName, StatObjectOptions{opts})
+						objectInfo, err = c.statObject(ctx, bucketName, objectName, StatObjectOptions(opts))
 						if err != nil {
 							resCh <- getResponse{
 								Error: err,
@@ -143,7 +143,7 @@ func (c Client) GtObject(ctx context.Context, bucketName, objectName string, opt
 					if etag != "" && !snowball {
 						opts.SetMatchETag(etag)
 					}
-					objectInfo, err := c.statObject(ctx, bucketName, objectName, StatObjectOptions{opts})
+					objectInfo, err := c.statObject(ctx, bucketName, objectName, StatObjectOptions(opts))
 					if err != nil {
 						resCh <- getResponse{
 							Error: err,

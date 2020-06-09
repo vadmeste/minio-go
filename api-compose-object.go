@@ -173,6 +173,7 @@ func (d *DestinationInfo) getUserMetaHeadersMap(withCopyDirectiveHeader bool) ma
 // server-side copying APIs.
 type SourceInfo struct {
 	bucket, object string
+	versionID      string
 	start, end     int64
 	encryption     encrypt.ServerSide
 	// Headers to send with the upload-part-copy request involving
@@ -198,6 +199,9 @@ func NewSourceInfo(bucket, object string, sse encrypt.ServerSide) SourceInfo {
 	// Set the source header
 	r.Headers.Set("x-amz-copy-source", s3utils.EncodePath(bucket+"/"+object))
 	return r
+}
+
+func (s *SourceInfo) SetVersionID(versionID string) {
 }
 
 // SetRange - Set the start and end offset of the source object to be
@@ -256,7 +260,7 @@ func (s *SourceInfo) getProps(c Client) (size int64, etag string, userMeta map[s
 	// Get object info - need size and etag here. Also, decryption
 	// headers are added to the stat request if given.
 	var objInfo ObjectInfo
-	opts := StatObjectOptions{GetObjectOptions{ServerSideEncryption: encrypt.SSE(s.encryption)}}
+	opts := StatObjectOptions{ServerSideEncryption: encrypt.SSE(s.encryption)}
 	objInfo, err = c.statObject(context.Background(), s.bucket, s.object, opts)
 	if err != nil {
 		err = errInvalidArgument(fmt.Sprintf("Could not stat object - %s/%s: %v", s.bucket, s.object, err))
