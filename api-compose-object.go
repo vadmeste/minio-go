@@ -479,7 +479,7 @@ func (c Client) ComposeObject(ctx context.Context, dst DestinationInfo, srcs []S
 	// involved, it is being copied wholly and at most 5GiB in
 	// size, emptyfiles are also supported).
 	if (totalParts == 1 && srcs[0].start == -1 && totalSize <= maxPartSize) || (totalSize == 0) {
-		return c.CopyObject(dst, srcs[0], CopyObjectOptions(opts))
+		return c.CopyObject(ctx, dst, srcs[0], CopyObjectOptions(opts))
 	}
 
 	// Now, handle multipart-copy cases.
