@@ -1405,8 +1405,113 @@ func testRemoveObjectWithVersioning() {
 		return
 	}
 
-	// Delete all objects and their versions as long as the bucket itself
-	if err = cleanupVersionedBucket(bucketName, c); err != nil {
+	err = c.RemoveBucket(bucketName)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Cleanup failed", err)
+		return
+	}
+
+	successLogger(testName, function, args, startTime).Info()
+}
+
+func testRemoveObjectsWithVersioning() {
+	// initialize logging params
+	startTime := time.Now()
+	testName := getFuncName()
+	function := "DeleteObjects()"
+	args := map[string]interface{}{}
+
+	// Seed random based on current time.
+	rand.Seed(time.Now().Unix())
+
+	// Instantiate new minio client object.
+	c, err := minio.New(
+		os.Getenv(serverEndpoint),
+		os.Getenv(accessKey),
+		os.Getenv(secretKey),
+		mustParseBool(os.Getenv(enableHTTPS)),
+	)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "MinIO client object creation failed", err)
+		return
+	}
+
+	// Enable tracing, write to stderr.
+	// c.TraceOn(os.Stderr)
+
+	// Set user agent.
+	c.SetAppInfo("MinIO-go-FunctionalTest", "0.1.0")
+
+	// Generate a new random bucket name.
+	bucketName := randString(60, rand.NewSource(time.Now().UnixNano()), "minio-go-test-")
+	args["bucketName"] = bucketName
+
+	// Make a new bucket.
+	err = c.MakeBucketWithObjectLock(bucketName, "us-east-1")
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Make bucket failed", err)
+		return
+	}
+
+	err = c.EnableVersioning(bucketName)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Enable versioning failed", err)
+		return
+	}
+
+	objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
+	args["objectName"] = objectName
+
+	n, err := c.PutObject(bucketName, objectName, getDataReader("datafile-10-kB"), int64(dataFileMap["datafile-10-kB"]), minio.PutObjectOptions{})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "PutObject failed", err)
+		return
+	}
+	if n != int64(dataFileMap["datafile-10-kB"]) {
+		logError(testName, function, args, startTime, "",
+			"Number of bytes returned by PutObject does not match, expected "+string(dataFileMap["datafile-10-kB"])+" got "+string(n), err)
+		return
+	}
+
+	objectsVersions := make(chan minio.ObjectVersion)
+	go func() {
+		doneCh := make(chan struct{})
+		objectsVersionsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+		for info := range objectsVersionsInfo {
+			if info.Err != nil {
+				logError(testName, function, args, startTime, "", "Unexpected error during listing objects", err)
+				return
+			}
+			objectsVersions <- minio.ObjectVersion{
+				Key:       info.Key,
+				VersionID: info.VersionID,
+			}
+		}
+		close(objectsVersions)
+	}()
+
+	removeErrors := c.RemoveObjectsWithVersions(context.Background(), bucketName, objectsVersions, minio.RemoveObjectsOptions{})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "DeleteObjects call failed", err)
+		return
+	}
+
+	for e := range removeErrors {
+		if e.Err != nil {
+			logError(testName, function, args, startTime, "", "Single delete operation failed", err)
+			return
+		}
+	}
+
+	doneCh := make(chan struct{})
+	objectsVersionsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+	for range objectsVersionsInfo {
+		logError(testName, function, args, startTime, "", "Unexpected versioning info, should not have any one ", err)
+		return
+	}
+
+	err = c.RemoveBucket(bucketName)
+	if err != nil {
 		logError(testName, function, args, startTime, "", "Cleanup failed", err)
 		return
 	}
@@ -11387,6 +11492,7 @@ func main() {
 		testCopyObjectWithVersioning()
 		testComposeObjectWithVersioning()
 		testRemoveObjectWithVersioning()
+		testRemoveObjectsWithVersioning()
 		testObjectTaggingWithVersioning()
 
 		// SSE-C tests will only work over TLS connection.
