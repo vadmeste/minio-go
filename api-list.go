@@ -489,28 +489,11 @@ func (c Client) ListObjectVersions(bucketName, prefix string, recursive bool, do
 					StorageClass: version.StorageClass,
 					IsLatest:     version.IsLatest,
 					VersionID:    version.VersionID,
+
+					IsDeleteMarker: version.isDeleteMarker,
 				}
 				select {
 				// Send object version info.
-				case resultCh <- info:
-				// If receives done from the caller, return here.
-				case <-doneCh:
-					return
-				}
-			}
-
-			// If contents are available loop through and send over channel.
-			for _, deleteMarker := range result.DeleteMarkers {
-				info := ObjectVersionInfo{
-					IsDeleteMarker: true,
-					Key:            deleteMarker.Key,
-					LastModified:   deleteMarker.LastModified,
-					Owner:          deleteMarker.Owner,
-					IsLatest:       deleteMarker.IsLatest,
-					VersionID:      deleteMarker.VersionID,
-				}
-				select {
-				// Send object content.
 				case resultCh <- info:
 				// If receives done from the caller, return here.
 				case <-doneCh:
@@ -625,13 +608,6 @@ func (c Client) listObjectVersionsQuery(bucketName, prefix, keyMarker, versionID
 
 	for i, obj := range listObjectVersionsOutput.Versions {
 		listObjectVersionsOutput.Versions[i].Key, err = decodeS3Name(obj.Key, listObjectVersionsOutput.EncodingType)
-		if err != nil {
-			return listObjectVersionsOutput, err
-		}
-	}
-
-	for i, delMarker := range listObjectVersionsOutput.DeleteMarkers {
-		listObjectVersionsOutput.DeleteMarkers[i].Key, err = decodeS3Name(delMarker.Key, listObjectVersionsOutput.EncodingType)
 		if err != nil {
 			return listObjectVersionsOutput, err
 		}
