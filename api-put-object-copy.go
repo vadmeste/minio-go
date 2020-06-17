@@ -29,12 +29,12 @@ import (
 )
 
 // CopyObject - copy a source object into a new object
-func (c Client) CopyObject(ctx context.Context, dst DestinationInfo, src SourceInfo) error {
+func (c Client) CopyObject(ctx context.Context, dst DestinationOptions, src SourceOptions) error {
 	return c.CopyObjectWithProgress(ctx, dst, src, nil)
 }
 
 // CopyObjectWithProgress is like CopyObject with additional progress bar.
-func (c Client) CopyObjectWithProgress(ctx context.Context, dst DestinationInfo, src SourceInfo, progress io.Reader) error {
+func (c Client) CopyObjectWithProgress(ctx context.Context, dst DestinationOptions, src SourceOptions, progress io.Reader) error {
 	header := make(http.Header)
 	for k, v := range src.Headers {
 		header[k] = v
