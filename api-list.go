@@ -423,7 +423,7 @@ func (c Client) ListObjects(ctx context.Context, bucketName, objectPrefix string
 	return objectStatCh
 }
 
-// ListObjectVersions - List versions of some objects or all recursively.
+// ListObjectVersions - List versions of some or all objects.
 //
 // e.g.:
 //   api := client.New(....)
@@ -432,7 +432,7 @@ func (c Client) ListObjects(ctx context.Context, bucketName, objectPrefix string
 //   defer close(doneCh)
 //   // Recurively list all objects in 'mytestbucket'
 //   recursive := true
-//   for message := range api.ListObjectVersions("mytestbucket", "starthere", recursive, doneCh) {
+//   for message := range api.ListObjectVersions("mytestbucket", "prefix", recursive, doneCh) {
 //       fmt.Println(message)
 //   }
 func (c Client) ListObjectVersions(bucketName, prefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectVersionInfo {

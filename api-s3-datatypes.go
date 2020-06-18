@@ -102,9 +102,12 @@ type ListVersionsResult struct {
 	KeyMarker           string
 	VersionIDMarker     string
 	NextKeyMarker       string
-	NextVersionIDMarker string `xml:"NextVersionIdMarker"`
+	NextVersionIDMarker string
 }
 
+// UnmarshalXML is a custom unmarshal code for the response of ListObjectVersions, the custom
+// code will unmarshal <Version> and <DeleteMarker> tags and save them in Versions field to
+// preserve the lexical order of the listing.
 func (l *ListVersionsResult) UnmarshalXML(d *xml.Decoder, start xml.StartElement) (err error) {
 	for {
 		// Read tokens from the XML document in a stream.

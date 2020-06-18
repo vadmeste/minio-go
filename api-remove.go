@@ -174,11 +174,15 @@ func (c Client) RemoveObjects(ctx context.Context, bucketName string, objectsCh 
 	return c.RemoveObjectsWithVersions(ctx, bucketName, objectsVersionsCh, RemoveObjectsOptions{})
 }
 
+// ObjectVersion points to a specific object version
 type ObjectVersion struct {
 	Key       string
 	VersionID string
 }
 
+// RemoveObjectsWithVersions removes multiple objects from a bucket while
+// it is possible to specify objects versions which are received from
+// objectsCh. Remove failures are sent back via error channel.
 func (c Client) RemoveObjectsWithVersions(ctx context.Context, bucketName string, objectsCh <-chan ObjectVersion, opts RemoveObjectsOptions) <-chan RemoveObjectError {
 	errorCh := make(chan RemoveObjectError, 1)
 

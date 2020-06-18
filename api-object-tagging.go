@@ -29,11 +29,14 @@ import (
 	"github.com/minio/minio-go/v7/pkg/tags"
 )
 
+// PutObjectTaggingOptions holds an object version id
+// to update tag(s) of a specific object version
 type PutObjectTaggingOptions struct {
 	VersionID string
 }
 
-// PutObjectTagging replaces or creates object tag(s)
+// PutObjectTaggingWithOptions replaces or creates object tag(s) and can target
+// a specific object version in a versioned bucket.
 func (c Client) PutObjectTagging(ctx context.Context, bucketName, objectName string, objectTags map[string]string, opts PutObjectTaggingOptions) error {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
@@ -82,11 +85,14 @@ func (c Client) PutObjectTagging(ctx context.Context, bucketName, objectName str
 	return nil
 }
 
+// GetObjectTaggingOptions holds the object version ID
+// to fetch the tagging key/value pairs
 type GetObjectTaggingOptions struct {
 	VersionID string
 }
 
-// GetObjectTagging fetches object tag(s)
+// GetObjectTagging fetches object tag(s) with options to target
+// a specific object version in a versioned bucket.
 func (c Client) GetObjectTagging(ctx context.Context, bucketName, objectName string, opts GetObjectTaggingOptions) (string, error) {
 	// Get resources properly escaped and lined up before
 	// using them in http request.
@@ -123,11 +129,13 @@ func (c Client) GetObjectTagging(ctx context.Context, bucketName, objectName str
 	return string(tagBuf), err
 }
 
+// RemoveObjectTaggingOptions holds the version id of the object to remove
 type RemoveObjectTaggingOptions struct {
 	VersionID string
 }
 
-// RemoveObjectTagging deletes object tag(s)
+// RemoveObjectTaggingWithOptions removes object tag(s) with options to control a specific object
+// version in a versioned bucket
 func (c Client) RemoveObjectTagging(ctx context.Context, bucketName, objectName string, opts RemoveObjectTaggingOptions) error {
 	// Get resources properly escaped and lined up before
 	// using them in http request.
