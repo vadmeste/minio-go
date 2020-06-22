@@ -129,7 +129,7 @@ type RemoveObjectError struct {
 func generateRemoveMultiObjectsRequest(objects []ObjectVersion) []byte {
 	rmObjects := []deleteObject{}
 	for _, obj := range objects {
-		rmObjects = append(rmObjects, deleteObject{Key: obj.Key, VersionID: obj.VersionID})
+		rmObjects = append(rmObjects, deleteObject(obj))
 	}
 	xmlBytes, _ := xml.Marshal(deleteMultiObjects{Objects: rmObjects, Quiet: true})
 	return xmlBytes
