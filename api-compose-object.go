@@ -36,37 +36,7 @@ import (
 // created via server-side copy requests, using the Compose API.
 type DestinationInfo struct {
 	bucket, object string
-	opts           DestInfoOptions
-}
-
-// DestInfoOptions represents options specified by user for NewDestinationInfo call
-type DestInfoOptions struct {
-	// `Encryption` is the key info for server-side-encryption with customer
-	// provided key. If it is nil, no encryption is performed.
-	Encryption encrypt.ServerSide
-
-	// `userMeta` is the user-metadata key-value pairs to be set on the
-	// destination. The keys are automatically prefixed with `x-amz-meta-`
-	// if needed. If nil is passed, and if only a single source (of any
-	// size) is provided in the ComposeObject call, then metadata from the
-	// source is copied to the destination.
-	// if no user-metadata is provided, it is copied from source
-	// (when there is only once source object in the compose
-	// request)
-	UserMeta map[string]string
-
-	// `userTags` is the user defined object tags to be set on destination.
-	// This will be set only if the `replaceTags` field is set to true.
-	// Otherwise this field is ignored
-	UserTags    map[string]string
-	ReplaceTags bool
-
-	// Specifies whether you want to apply a Legal Hold to the copied object.
-	LegalHold LegalHoldStatus
-
-	// Object Retention related fields
-	Mode            RetentionMode
-	RetainUntilDate time.Time
+	opts           PutObjectOptions
 }
 
 // Process custom-metadata to remove a `x-amz-meta-` prefix if
@@ -109,13 +79,12 @@ func NewDestinationInfo(bucket, object string, sse encrypt.ServerSide, userMeta 
 	if err != nil {
 		return d, err
 	}
-	opts := DestInfoOptions{
-		Encryption:  sse,
-		UserMeta:    m,
-		UserTags:    nil,
-		ReplaceTags: false,
-		LegalHold:   LegalHoldStatus(""),
-		Mode:        RetentionMode(""),
+	opts := PutObjectOptions{
+		ServerSideEncryption: sse,
+		UserMetadata:         m,
+		UserTags:             nil,
+		ReplaceTags:          false,
+		LegalHold:            LegalHoldStatus(""),
 	}
 	return DestinationInfo{
 		bucket: bucket,
@@ -126,7 +95,7 @@ func NewDestinationInfo(bucket, object string, sse encrypt.ServerSide, userMeta 
 
 // NewDestinationInfoWithOptions - creates a compose-object/copy-source
 // destination info object.
-func NewDestinationInfoWithOptions(bucket, object string, destOpts DestInfoOptions) (d DestinationInfo, err error) {
+func NewDestinationInfoWithOptions(bucket, object string, destOpts PutObjectOptions) (d DestinationInfo, err error) {
 	// Input validation.
 	if err = s3utils.CheckValidBucketName(bucket); err != nil {
 		return d, err
@@ -134,7 +103,7 @@ func NewDestinationInfoWithOptions(bucket, object string, destOpts DestInfoOptio
 	if err = s3utils.CheckValidObjectName(object); err != nil {
 		return d, err
 	}
-	destOpts.UserMeta, err = filterCustomMeta(destOpts.UserMeta)
+	destOpts.UserMetadata, err = filterCustomMeta(destOpts.UserMetadata)
 	if err != nil {
 		return d, err
 	}
@@ -152,14 +121,14 @@ func NewDestinationInfoWithOptions(bucket, object string, destOpts DestInfoOptio
 // `REPLACE`, so that metadata headers from the source are not copied
 // over.
 func (d *DestinationInfo) getUserMetaHeadersMap(withCopyDirectiveHeader bool) map[string]string {
-	if len(d.opts.UserMeta) == 0 {
+	if len(d.opts.UserMetadata) == 0 {
 		return nil
 	}
 	r := make(map[string]string)
 	if withCopyDirectiveHeader {
 		r["x-amz-metadata-directive"] = "REPLACE"
 	}
-	for k, v := range d.opts.UserMeta {
+	for k, v := range d.opts.UserMetadata {
 		if isAmzHeader(k) || isStandardHeader(k) || isStorageClassHeader(k) {
 			r[k] = v
 		} else {
@@ -505,7 +474,7 @@ func (c Client) ComposeObjectWithProgress(ctx context.Context, dst DestinationIn
 		metaHeaders[k] = v
 	}
 
-	uploadID, err := c.newUploadID(ctx, dst.bucket, dst.object, PutObjectOptions{ServerSideEncryption: dst.opts.Encryption, UserMetadata: metaHeaders})
+	uploadID, err := c.newUploadID(ctx, dst.bucket, dst.object, PutObjectOptions{ServerSideEncryption: dst.opts.ServerSideEncryption, UserMetadata: metaHeaders})
 	if err != nil {
 		return err
 	}
@@ -519,8 +488,8 @@ func (c Client) ComposeObjectWithProgress(ctx context.Context, dst DestinationIn
 			encrypt.SSECopy(src.encryption).Marshal(h)
 		}
 		// Add destination encryption headers
-		if dst.opts.Encryption != nil {
-			dst.opts.Encryption.Marshal(h)
+		if dst.opts.ServerSideEncryption != nil {
+			dst.opts.ServerSideEncryption.Marshal(h)
 		}
 
 		// calculate start/end indices of parts after

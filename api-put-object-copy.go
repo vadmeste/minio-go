@@ -49,7 +49,7 @@ func (c Client) CopyObjectWithProgress(ctx context.Context, dst DestinationInfo,
 		header.Set(amzLegalHoldHeader, dst.opts.LegalHold.String())
 	}
 
-	if dst.opts.Mode != RetentionMode("") && !dst.opts.RetainUntilDate.IsZero() {
+	if dst.opts.Mode != nil && dst.opts.RetainUntilDate != nil {
 		header.Set(amzLockMode, dst.opts.Mode.String())
 		header.Set(amzLockRetainUntil, dst.opts.RetainUntilDate.Format(time.RFC3339))
 	}
@@ -68,8 +68,8 @@ func (c Client) CopyObjectWithProgress(ctx context.Context, dst DestinationInfo,
 		encrypt.SSECopy(src.encryption).Marshal(header)
 	}
 
-	if dst.opts.Encryption != nil {
-		dst.opts.Encryption.Marshal(header)
+	if dst.opts.ServerSideEncryption != nil {
+		dst.opts.ServerSideEncryption.Marshal(header)
 	}
 	for k, v := range dst.getUserMetaHeadersMap(true) {
 		header.Set(k, v)

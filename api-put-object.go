@@ -53,6 +53,8 @@ type PutObjectOptions struct {
 	LegalHold               LegalHoldStatus
 	SendContentMd5          bool
 	DisableMultipart        bool
+
+	ReplaceTags bool
 }
 
 // getNumThreads - gets the number of threads to be used in the multipart
