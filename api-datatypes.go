@@ -62,6 +62,19 @@ func (m *StringMap) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	return nil
 }
 
+type UploadInfo struct {
+	ETag      string
+	Bucket    string
+	Key       string
+	VersionID string
+
+	opts NewObjectOptions
+}
+
+func (u UploadInfo) ToOptions() NewObjectOptions {
+	return u.opts
+}
+
 // ObjectInfo container for object metadata.
 type ObjectInfo struct {
 	// An ETag is optionally set to md5sum of an object.  In case of multipart objects,
