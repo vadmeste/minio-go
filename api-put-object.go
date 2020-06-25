@@ -33,26 +33,31 @@ import (
 	"golang.org/x/net/http/httpguts"
 )
 
-// PutObjectOptions represents options specified by user for PutObject call
-type PutObjectOptions struct {
+type NewObjectOptions struct {
 	UserMetadata            map[string]string
 	UserTags                map[string]string
-	Progress                io.Reader
 	ContentType             string
 	ContentEncoding         string
 	ContentDisposition      string
 	ContentLanguage         string
 	CacheControl            string
-	Mode                    *RetentionMode
-	RetainUntilDate         *time.Time
+	Mode                    RetentionMode
+	RetainUntilDate         time.Time
+	LegalHold               LegalHoldStatus
 	ServerSideEncryption    encrypt.ServerSide
-	NumThreads              uint
 	StorageClass            string
 	WebsiteRedirectLocation string
-	PartSize                uint64
-	LegalHold               LegalHoldStatus
-	SendContentMd5          bool
-	DisableMultipart        bool
+}
+
+// PutObjectOptions represents options specified by user for PutObject call
+type PutObjectOptions struct {
+	NewObjectOptions
+
+	Progress         io.Reader
+	NumThreads       uint
+	PartSize         uint64
+	SendContentMd5   bool
+	DisableMultipart bool
 }
 
 // getNumThreads - gets the number of threads to be used in the multipart
@@ -90,11 +95,11 @@ func (opts PutObjectOptions) Header() (header http.Header) {
 		header.Set("Cache-Control", opts.CacheControl)
 	}
 
-	if opts.Mode != nil {
+	if opts.Mode != "" {
 		header.Set(amzLockMode, opts.Mode.String())
 	}
 
-	if opts.RetainUntilDate != nil {
+	if !opts.RetainUntilDate.IsZero() {
 		header.Set("X-Amz-Object-Lock-Retain-Until-Date", opts.RetainUntilDate.Format(time.RFC3339))
 	}
 
@@ -138,10 +143,8 @@ func (opts PutObjectOptions) validate() (err error) {
 			return ErrInvalidArgument(v + " unsupported user defined metadata value")
 		}
 	}
-	if opts.Mode != nil {
-		if !opts.Mode.IsValid() {
-			return ErrInvalidArgument(opts.Mode.String() + " unsupported retention mode")
-		}
+	if opts.Mode != "" && !opts.Mode.IsValid() {
+		return ErrInvalidArgument(opts.Mode.String() + " unsupported retention mode")
 	}
 	if opts.LegalHold != "" && !opts.LegalHold.IsValid() {
 		return ErrInvalidArgument(opts.LegalHold.String() + " unsupported legal-hold status")

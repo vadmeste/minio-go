@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/json-iterator/go v1.1.9
 	github.com/minio/md5-simd v1.1.0
-	github.com/minio/minio-go/v6 v6.0.57 // indirect
+	github.com/minio/minio-go/v6 v6.0.57
 	github.com/minio/sha256-simd v0.1.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/sirupsen/logrus v1.6.0 // indirect
