@@ -122,6 +122,7 @@ func (c Client) RemoveObjectWithOptions(ctx context.Context, bucketName, objectN
 // RemoveObjectError - container of Multi Delete S3 API error
 type RemoveObjectError struct {
 	ObjectName string
+	VersionID  string
 	Err        error
 }
 
@@ -268,7 +269,11 @@ func (c Client) removeObjects(ctx context.Context, bucketName string, objectsCh 
 		}
 		if err != nil {
 			for _, b := range batch {
-				errorCh <- RemoveObjectError{ObjectName: b.Key, Err: err}
+				errorCh <- RemoveObjectError{
+					ObjectName: b.Key,
+					VersionID:  b.VersionID,
+					Err:        err,
+				}
 			}
 			continue
 		}
