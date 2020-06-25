@@ -20,13 +20,7 @@
 package main
 
 import (
-<<<<<<< HEAD
-	"bytes"
 	"context"
-	"fmt"
-	"io/ioutil"
-=======
->>>>>>> update
 	"log"
 	"time"
 
@@ -53,34 +47,11 @@ func main() {
 	// Source object
 	src := minio.NewSourceInfo("my-sourcebucketname", "my-sourceobjectname", nil)
 
-<<<<<<< HEAD
-	n, err := s3Client.PutObject(context.Background(), bucketName, objectName, bytes.NewReader(origData), int64(len(origData)), minio.PutObjectOptions{})
-	if err != nil {
-		log.Fatalln("put object:", err)
-	}
-=======
 	// All following conditions are allowed and can be combined together.
->>>>>>> update
 
 	// Set modified condition, copy object modified since 2014 April.
 	src.SetModifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
 
-<<<<<<< HEAD
-	// Source object
-	src := minio.NewSourceInfo(bucketName, objectName, nil)
-	dst, err := minio.NewDestinationInfo(bucketName, objectName+"-copy", nil, nil)
-	if err != nil {
-		log.Fatalln("new dest info:", err)
-	}
-
-	// Initiate copy object.
-	err = s3Client.CopyObject(context.Background(), dst, src)
-	if err != nil {
-		log.Fatalln("copy object:", err)
-	}
-
-	copyReader, err := s3Client.GetObject(context.Background(), bucketName, objectName+"-copy", minio.GetObjectOptions{})
-=======
 	// Set unmodified condition, copy object unmodified since 2014 April.
 	// src.SetUnmodifiedSinceCond(time.Date(2014, time.April, 0, 0, 0, 0, 0, time.UTC))
 
@@ -92,20 +63,14 @@ func main() {
 
 	// Destination object
 	dst, err := minio.NewDestinationInfo("my-bucketname", "my-objectname", nil, nil)
->>>>>>> update
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Initiate copy object.
-	err = s3Client.CopyObject(dst, src)
+	err = s3Client.CopyObject(context.Background(), dst, src)
 	if err != nil {
 		log.Fatalln(err)
 	}
-<<<<<<< HEAD
-
-	fmt.Printf("equal? %v\n", bytes.Equal(origData, copyData))
-=======
 	log.Println("Copied source object /my-sourcebucketname/my-sourceobjectname to destination /my-bucketname/my-objectname Successfully.")
->>>>>>> update
 }
