@@ -432,10 +432,10 @@ func (c Client) ListObjects(ctx context.Context, bucketName, objectPrefix string
 //   defer close(doneCh)
 //   // Recurively list all objects in 'mytestbucket'
 //   recursive := true
-//   for message := range api.ListObjectVersions("mytestbucket", "prefix", recursive, doneCh) {
+//   for message := range api.ListObjectVersions(ctx, "mytestbucket", "prefix", recursive, doneCh) {
 //       fmt.Println(message)
 //   }
-func (c Client) ListObjectVersions(bucketName, prefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectVersionInfo {
+func (c Client) ListObjectVersions(ctx context.Context, bucketName, prefix string, recursive bool, doneCh <-chan struct{}) <-chan ObjectVersionInfo {
 	// Allocate new list objects channel.
 	resultCh := make(chan ObjectVersionInfo, 1)
 	// Default listing is delimited at "/"
@@ -470,7 +470,7 @@ func (c Client) ListObjectVersions(bucketName, prefix string, recursive bool, do
 		var keyMarker, versionIDMarker string
 		for {
 			// Get list of objects a maximum of 1000 per request.
-			result, err := c.listObjectVersionsQuery(bucketName, prefix, keyMarker, versionIDMarker, delimiter, 0)
+			result, err := c.listObjectVersionsQuery(ctx, bucketName, prefix, keyMarker, versionIDMarker, delimiter, 0)
 			if err != nil {
 				resultCh <- ObjectVersionInfo{
 					Err: err,
@@ -543,7 +543,7 @@ func (c Client) ListObjectVersions(bucketName, prefix string, recursive bool, do
 // ?delimiter - A delimiter is a character you use to group keys.
 // ?prefix - Limits the response to keys that begin with the specified prefix.
 // ?max-keys - Sets the maximum number of keys returned in the response body.
-func (c Client) listObjectVersionsQuery(bucketName, prefix, keyMarker, versionIDMarker, delimiter string, maxkeys int) (ListVersionsResult, error) {
+func (c Client) listObjectVersionsQuery(ctx context.Context, bucketName, prefix, keyMarker, versionIDMarker, delimiter string, maxkeys int) (ListVersionsResult, error) {
 	// Validate bucket name.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
 		return ListVersionsResult{}, err
@@ -584,7 +584,7 @@ func (c Client) listObjectVersionsQuery(bucketName, prefix, keyMarker, versionID
 	urlValues.Set("encoding-type", "url")
 
 	// Execute GET on bucket to list objects.
-	resp, err := c.executeMethod(context.Background(), "GET", requestMetadata{
+	resp, err := c.executeMethod(ctx, "GET", requestMetadata{
 		bucketName:       bucketName,
 		queryValues:      urlValues,
 		contentSHA256Hex: emptySHA256Hex,

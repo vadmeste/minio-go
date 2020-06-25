@@ -20,9 +20,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/minio/minio-go/v6"
+	"github.com/minio/minio-go/v7"
 )
 
 func main() {
@@ -47,7 +48,7 @@ func main() {
 	defer close(doneCh)
 
 	// List all objects from a bucket-name with a matching prefix.
-	for objectVersion := range s3Client.ListObjectVersions("my-bucketname", "my-prefixname", true, doneCh) {
+	for objectVersion := range s3Client.ListObjectVersions(context.Background(), "my-bucketname", "my-prefixname", true, doneCh) {
 		if objectVersion.Err != nil {
 			fmt.Println(objectVersion.Err)
 			return
