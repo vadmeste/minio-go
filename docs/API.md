@@ -1304,7 +1304,7 @@ Parameters
 |`objectsCh` | _chan minio.ObjectVersion_ | Channel of objects and versions to be removed  |
 |`opts` | _minio.RemoveObjectsOptions_ | Objects deletion general options |
 
-__minio.RemoveObjecVersion__
+__minio.RemoveObjectVersion__
 
 |Field | Type | Description |
 |:--- |:--- | :--- |
