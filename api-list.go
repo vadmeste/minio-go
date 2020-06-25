@@ -532,7 +532,7 @@ func (c Client) ListObjectVersions(bucketName, prefix string, recursive bool, do
 	return resultCh
 }
 
-// listObjectVersions - (List Object Versions) - List some or all (up to 1000) of the exiting objects
+// listObjectVersions - (List Object Versions) - List some or all (up to 1000) of the existing objects
 // and their versions in a bucket.
 //
 // You can use the request parameters as selection criteria to return a subset of the objects in a bucket.
