@@ -99,6 +99,6 @@ func (c Client) CopyObjectWithProgress(ctx context.Context, dst DestinationOptio
 		Key:       dst.object,
 		VersionID: resp.Header.Get("x-amz-version-id"),
 		ETag:      trimEtag(resp.Header.Get("ETag")),
-		opts:      dst.opts.NewObjectOptions,
+		opts:      dst.ToOptions(),
 	}, nil
 }

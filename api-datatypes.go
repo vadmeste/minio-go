@@ -68,10 +68,10 @@ type UploadInfo struct {
 	Key       string
 	VersionID string
 
-	opts NewObjectOptions
+	opts ObjectOptions
 }
 
-func (u UploadInfo) ToOptions() NewObjectOptions {
+func (u UploadInfo) ToOptions() ObjectOptions {
 	return u.opts
 }
 

@@ -33,7 +33,7 @@ import (
 	"golang.org/x/net/http/httpguts"
 )
 
-type NewObjectOptions struct {
+type ObjectOptions struct {
 	UserMetadata            map[string]string
 	UserTags                map[string]string
 	ContentType             string
@@ -51,13 +51,43 @@ type NewObjectOptions struct {
 
 // PutObjectOptions represents options specified by user for PutObject call
 type PutObjectOptions struct {
-	NewObjectOptions
+	UserMetadata            map[string]string
+	UserTags                map[string]string
+	ContentType             string
+	ContentEncoding         string
+	ContentDisposition      string
+	ContentLanguage         string
+	CacheControl            string
+	Mode                    RetentionMode
+	RetainUntilDate         time.Time
+	LegalHold               LegalHoldStatus
+	ServerSideEncryption    encrypt.ServerSide
+	StorageClass            string
+	WebsiteRedirectLocation string
 
 	Progress         io.Reader
 	NumThreads       uint
 	PartSize         uint64
 	SendContentMd5   bool
 	DisableMultipart bool
+}
+
+func (p PutObjectOptions) ToOptions() ObjectOptions {
+	return ObjectOptions{
+		UserMetadata:            p.UserMetadata,
+		UserTags:                p.UserTags,
+		ContentType:             p.ContentType,
+		ContentEncoding:         p.ContentEncoding,
+		ContentDisposition:      p.ContentDisposition,
+		ContentLanguage:         p.ContentLanguage,
+		CacheControl:            p.CacheControl,
+		Mode:                    p.Mode,
+		RetainUntilDate:         p.RetainUntilDate,
+		LegalHold:               p.LegalHold,
+		ServerSideEncryption:    p.ServerSideEncryption,
+		StorageClass:            p.StorageClass,
+		WebsiteRedirectLocation: p.WebsiteRedirectLocation,
+	}
 }
 
 // getNumThreads - gets the number of threads to be used in the multipart
@@ -325,7 +355,6 @@ func (c Client) putObjectMultipartStreamNoLength(ctx context.Context, bucketName
 	if err != nil {
 		return UploadInfo{}, err
 	}
-	upload.opts = opts.NewObjectOptions
-
+	upload.opts = opts.ToOptions()
 	return upload, nil
 }

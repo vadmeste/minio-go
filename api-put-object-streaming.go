@@ -218,7 +218,7 @@ func (c Client) putObjectMultipartStreamFromReadAt(ctx context.Context, bucketNa
 	if err != nil {
 		return UploadInfo{}, err
 	}
-	upload.opts = opts.NewObjectOptions
+	upload.opts = opts.ToOptions()
 	return upload, nil
 }
 
@@ -343,7 +343,7 @@ func (c Client) putObjectMultipartStreamOptionalChecksum(ctx context.Context, bu
 		return UploadInfo{}, err
 	}
 
-	upload.opts = opts.NewObjectOptions
+	upload.opts = opts.ToOptions()
 	return upload, nil
 }
 
@@ -458,6 +458,6 @@ func (c Client) putObjectDo(ctx context.Context, bucketName, objectName string, 
 		Key:       objectName,
 		ETag:      trimEtag(resp.Header.Get("ETag")),
 		VersionID: resp.Header.Get("x-amz-version-id"),
-		opts:      opts.NewObjectOptions,
+		opts:      opts.ToOptions(),
 	}, nil
 }

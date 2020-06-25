@@ -178,7 +178,7 @@ func (c Client) putObjectMultipartNoStream(ctx context.Context, bucketName, obje
 	if err != nil {
 		return UploadInfo{}, err
 	}
-	upload.opts = opts.NewObjectOptions
+	upload.opts = opts.ToOptions()
 	return upload, nil
 }
 

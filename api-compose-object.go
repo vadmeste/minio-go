@@ -33,7 +33,19 @@ import (
 )
 
 type CopyObjectOptions struct {
-	NewObjectOptions
+	UserMetadata            map[string]string
+	UserTags                map[string]string
+	ContentType             string
+	ContentEncoding         string
+	ContentDisposition      string
+	ContentLanguage         string
+	CacheControl            string
+	Mode                    RetentionMode
+	RetainUntilDate         time.Time
+	LegalHold               LegalHoldStatus
+	ServerSideEncryption    encrypt.ServerSide
+	StorageClass            string
+	WebsiteRedirectLocation string
 
 	ReplaceTags bool
 }
@@ -43,6 +55,24 @@ type CopyObjectOptions struct {
 type DestinationOptions struct {
 	bucket, object string
 	opts           CopyObjectOptions
+}
+
+func (d DestinationOptions) ToOptions() ObjectOptions {
+	return ObjectOptions{
+		UserMetadata:            d.opts.UserMetadata,
+		UserTags:                d.opts.UserTags,
+		ContentType:             d.opts.ContentType,
+		ContentEncoding:         d.opts.ContentEncoding,
+		ContentDisposition:      d.opts.ContentDisposition,
+		ContentLanguage:         d.opts.ContentLanguage,
+		CacheControl:            d.opts.CacheControl,
+		Mode:                    d.opts.Mode,
+		RetainUntilDate:         d.opts.RetainUntilDate,
+		LegalHold:               d.opts.LegalHold,
+		ServerSideEncryption:    d.opts.ServerSideEncryption,
+		StorageClass:            d.opts.StorageClass,
+		WebsiteRedirectLocation: d.opts.WebsiteRedirectLocation,
+	}
 }
 
 // Process custom-metadata to remove a `x-amz-meta-` prefix if
@@ -496,7 +526,7 @@ func (c Client) ComposeObjectWithProgress(ctx context.Context, dst DestinationOp
 		return UploadInfo{}, err
 	}
 
-	upload.opts = dst.opts.NewObjectOptions
+	upload.opts = dst.ToOptions()
 	return upload, nil
 }
 
