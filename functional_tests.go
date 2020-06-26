@@ -1,5 +1,3 @@
-// +build ignore
-
 /*
  * MinIO Go Library for Amazon S3 Compatible Cloud Storage
  * Copyright 2015-2020 MinIO, Inc.
@@ -183,30 +181,30 @@ func cleanupBucket(bucketName string, c *minio.Client) error {
 func cleanupVersionedBucket(bucketName string, c *minio.Client) error {
 	doneCh := make(chan struct{})
 	defer close(doneCh)
-	for obj := range c.ListObjectVersions(bucketName, "", true, doneCh) {
+	for obj := range c.ListObjectVersions(context.Background(), bucketName, "", true, doneCh) {
 		if obj.Err != nil {
 			return obj.Err
 		}
 		if obj.Key != "" {
-			err := c.RemoveObjectWithOptions(bucketName, obj.Key, minio.RemoveObjectOptions{VersionID: obj.VersionID})
+			err := c.RemoveObjectWithOptions(context.Background(), bucketName, obj.Key, minio.RemoveObjectOptions{VersionID: obj.VersionID})
 			if err != nil {
 				return err
 			}
 		}
 	}
-	for objPartInfo := range c.ListIncompleteUploads(bucketName, "", true, doneCh) {
+	for objPartInfo := range c.ListIncompleteUploads(context.Background(), bucketName, "", true, doneCh) {
 		if objPartInfo.Err != nil {
 			return objPartInfo.Err
 		}
 		if objPartInfo.Key != "" {
-			err := c.RemoveIncompleteUpload(bucketName, objPartInfo.Key)
+			err := c.RemoveIncompleteUpload(context.Background(), bucketName, objPartInfo.Key)
 			if err != nil {
 				return err
 			}
 		}
 	}
 	// objects are already deleted, clear the buckets now
-	err := c.RemoveBucket(bucketName)
+	err := c.RemoveBucket(context.Background(), bucketName)
 	if err != nil {
 		return err
 	}
@@ -664,13 +662,13 @@ func testListObjectVersions() {
 	args["bucketName"] = bucketName
 
 	// Make a new bucket.
-	err = c.MakeBucketWithObjectLock(bucketName, "us-east-1")
+	err = c.MakeBucketWithObjectLock(context.Background(), bucketName, "us-east-1")
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Make bucket failed", err)
 		return
 	}
 
-	err = c.EnableVersioning(bucketName)
+	err = c.EnableVersioning(context.Background(), bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Enable versioning failed", err)
 		return
@@ -683,7 +681,7 @@ func testListObjectVersions() {
 	bufSize := dataFileMap["datafile-10-kB"]
 	var reader = getDataReader("datafile-10-kB")
 
-	n, err := c.PutObject(bucketName, objectName, reader, int64(bufSize), minio.PutObjectOptions{})
+	n, err := c.PutObject(context.Background(), bucketName, objectName, reader, int64(bufSize), minio.PutObjectOptions{})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "PutObject failed", err)
 		return
@@ -696,7 +694,7 @@ func testListObjectVersions() {
 
 	bufSize = dataFileMap["datafile-1-b"]
 	reader = getDataReader("datafile-1-b")
-	n, err = c.PutObject(bucketName, objectName, reader, int64(bufSize), minio.PutObjectOptions{})
+	n, err = c.PutObject(context.Background(), bucketName, objectName, reader, int64(bufSize), minio.PutObjectOptions{})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "PutObject failed", err)
 		return
@@ -707,7 +705,7 @@ func testListObjectVersions() {
 	}
 	reader.Close()
 
-	err = c.RemoveObject(bucketName, objectName)
+	err = c.RemoveObject(context.Background(), bucketName, objectName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Unexpected object deletion", err)
 		return
@@ -716,7 +714,7 @@ func testListObjectVersions() {
 	var deleteMarkers, versions int
 
 	doneCh := make(chan struct{})
-	objectsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+	objectsInfo := c.ListObjectVersions(context.Background(), bucketName, "", true, doneCh)
 
 	for info := range objectsInfo {
 		if info.Err != nil {
@@ -794,13 +792,13 @@ func testStatObjectWithVersioning() {
 	args["bucketName"] = bucketName
 
 	// Make a new bucket.
-	err = c.MakeBucketWithObjectLock(bucketName, "us-east-1")
+	err = c.MakeBucketWithObjectLock(context.Background(), bucketName, "us-east-1")
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Make bucket failed", err)
 		return
 	}
 
-	err = c.EnableVersioning(bucketName)
+	err = c.EnableVersioning(context.Background(), bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Enable versioning failed", err)
 		return
@@ -813,7 +811,7 @@ func testStatObjectWithVersioning() {
 	bufSize := dataFileMap["datafile-10-kB"]
 	var reader = getDataReader("datafile-10-kB")
 
-	n, err := c.PutObject(bucketName, objectName, reader, int64(bufSize), minio.PutObjectOptions{})
+	n, err := c.PutObject(context.Background(), bucketName, objectName, reader, int64(bufSize), minio.PutObjectOptions{})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "PutObject failed", err)
 		return
@@ -826,7 +824,7 @@ func testStatObjectWithVersioning() {
 
 	bufSize = dataFileMap["datafile-1-b"]
 	reader = getDataReader("datafile-1-b")
-	n, err = c.PutObject(bucketName, objectName, reader, int64(bufSize), minio.PutObjectOptions{})
+	n, err = c.PutObject(context.Background(), bucketName, objectName, reader, int64(bufSize), minio.PutObjectOptions{})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "PutObject failed", err)
 		return
@@ -838,7 +836,7 @@ func testStatObjectWithVersioning() {
 	reader.Close()
 
 	doneCh := make(chan struct{})
-	objectsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+	objectsInfo := c.ListObjectVersions(context.Background(), bucketName, "", true, doneCh)
 
 	var results []minio.ObjectVersionInfo
 	for info := range objectsInfo {
@@ -856,7 +854,7 @@ func testStatObjectWithVersioning() {
 
 	for i := 0; i < len(results); i++ {
 		opts := minio.StatObjectOptions{minio.GetObjectOptions{VersionID: results[i].VersionID}}
-		statInfo, err := c.StatObject(bucketName, objectName, opts)
+		statInfo, err := c.StatObject(context.Background(), bucketName, objectName, opts)
 		if err != nil {
 			logError(testName, function, args, startTime, "", "error during HEAD object", err)
 			return
@@ -917,13 +915,13 @@ func testGetObjectWithVersioning() {
 	args["bucketName"] = bucketName
 
 	// Make a new bucket.
-	err = c.MakeBucketWithObjectLock(bucketName, "us-east-1")
+	err = c.MakeBucketWithObjectLock(context.Background(), bucketName, "us-east-1")
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Make bucket failed", err)
 		return
 	}
 
-	err = c.EnableVersioning(bucketName)
+	err = c.EnableVersioning(context.Background(), bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Enable versioning failed", err)
 		return
@@ -945,7 +943,7 @@ func testGetObjectWithVersioning() {
 			return
 		}
 		r.Close()
-		n, err := c.PutObject(bucketName, objectName, bytes.NewReader(buf), int64(len(buf)), minio.PutObjectOptions{})
+		n, err := c.PutObject(context.Background(), bucketName, objectName, bytes.NewReader(buf), int64(len(buf)), minio.PutObjectOptions{})
 		if err != nil {
 			logError(testName, function, args, startTime, "", "PutObject failed", err)
 			return
@@ -959,7 +957,7 @@ func testGetObjectWithVersioning() {
 	}
 
 	doneCh := make(chan struct{})
-	objectsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+	objectsInfo := c.ListObjectVersions(context.Background(), bucketName, "", true, doneCh)
 
 	var results []minio.ObjectVersionInfo
 	for info := range objectsInfo {
@@ -985,7 +983,7 @@ func testGetObjectWithVersioning() {
 
 	for i := 0; i < len(results); i++ {
 		opts := minio.GetObjectOptions{VersionID: results[i].VersionID}
-		reader, err := c.GetObject(bucketName, objectName, opts)
+		reader, err := c.GetObject(context.Background(), bucketName, objectName, opts)
 		if err != nil {
 			logError(testName, function, args, startTime, "", "error during  GET object", err)
 			return
@@ -1064,13 +1062,13 @@ func testCopyObjectWithVersioning() {
 	args["bucketName"] = bucketName
 
 	// Make a new bucket.
-	err = c.MakeBucketWithObjectLock(bucketName, "us-east-1")
+	err = c.MakeBucketWithObjectLock(context.Background(), bucketName, "us-east-1")
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Make bucket failed", err)
 		return
 	}
 
-	err = c.EnableVersioning(bucketName)
+	err = c.EnableVersioning(context.Background(), bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Enable versioning failed", err)
 		return
@@ -1088,7 +1086,7 @@ func testCopyObjectWithVersioning() {
 			return
 		}
 		r.Close()
-		n, err := c.PutObject(bucketName, objectName, bytes.NewReader(buf), int64(len(buf)), minio.PutObjectOptions{})
+		n, err := c.PutObject(context.Background(), bucketName, objectName, bytes.NewReader(buf), int64(len(buf)), minio.PutObjectOptions{})
 		if err != nil {
 			logError(testName, function, args, startTime, "", "PutObject failed", err)
 			return
@@ -1101,7 +1099,7 @@ func testCopyObjectWithVersioning() {
 	}
 
 	doneCh := make(chan struct{})
-	objectsVersionsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+	objectsVersionsInfo := c.ListObjectVersions(context.Background(), bucketName, "", true, doneCh)
 
 	var infos []minio.ObjectVersionInfo
 	for info := range objectsVersionsInfo {
@@ -1116,7 +1114,7 @@ func testCopyObjectWithVersioning() {
 		return infos[i].Size < infos[j].Size
 	})
 
-	reader, err := c.GetObject(bucketName, objectName, minio.GetObjectOptions{VersionID: infos[0].VersionID})
+	reader, err := c.GetObject(context.Background(), bucketName, objectName, minio.GetObjectOptions{VersionID: infos[0].VersionID})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "GetObject of the oldest version content failed", err)
 		return
@@ -1141,14 +1139,14 @@ func testCopyObjectWithVersioning() {
 	}
 
 	// Perform the Copy
-	err = c.CopyObject(dst, src)
+	err = c.CopyObject(context.Background(), dst, src)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "CopyObject failed", err)
 		return
 	}
 
 	// Destination object
-	readerCopy, err := c.GetObject(bucketName, objectName+"-copy", minio.GetObjectOptions{})
+	readerCopy, err := c.GetObject(context.Background(), bucketName, objectName+"-copy", minio.GetObjectOptions{})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "GetObject failed", err)
 		return
@@ -1208,13 +1206,13 @@ func testComposeObjectWithVersioning() {
 	args["bucketName"] = bucketName
 
 	// Make a new bucket.
-	err = c.MakeBucketWithObjectLock(bucketName, "us-east-1")
+	err = c.MakeBucketWithObjectLock(context.Background(), bucketName, "us-east-1")
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Make bucket failed", err)
 		return
 	}
 
-	err = c.EnableVersioning(bucketName)
+	err = c.EnableVersioning(context.Background(), bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Enable versioning failed", err)
 		return
@@ -1235,7 +1233,7 @@ func testComposeObjectWithVersioning() {
 			return
 		}
 		r.Close()
-		n, err := c.PutObject(bucketName, objectName, bytes.NewReader(buf), int64(len(buf)), minio.PutObjectOptions{})
+		n, err := c.PutObject(context.Background(), bucketName, objectName, bytes.NewReader(buf), int64(len(buf)), minio.PutObjectOptions{})
 		if err != nil {
 			logError(testName, function, args, startTime, "", "PutObject failed", err)
 			return
@@ -1250,7 +1248,7 @@ func testComposeObjectWithVersioning() {
 	}
 
 	doneCh := make(chan struct{})
-	objectsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+	objectsInfo := c.ListObjectVersions(context.Background(), bucketName, "", true, doneCh)
 
 	var results []minio.ObjectVersionInfo
 	for info := range objectsInfo {
@@ -1282,14 +1280,14 @@ func testComposeObjectWithVersioning() {
 		return
 	}
 
-	err = c.ComposeObject(dst, srcs)
+	err = c.ComposeObject(context.Background(), dst, srcs)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "ComposeObject failed", err)
 		return
 	}
 
 	// Destination object
-	readerCopy, err := c.GetObject(bucketName, objectName+"-copy", minio.GetObjectOptions{})
+	readerCopy, err := c.GetObject(context.Background(), bucketName, objectName+"-copy", minio.GetObjectOptions{})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "GetObject of the copy object failed", err)
 		return
@@ -1354,13 +1352,13 @@ func testRemoveObjectWithVersioning() {
 	args["bucketName"] = bucketName
 
 	// Make a new bucket.
-	err = c.MakeBucketWithObjectLock(bucketName, "us-east-1")
+	err = c.MakeBucketWithObjectLock(context.Background(), bucketName, "us-east-1")
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Make bucket failed", err)
 		return
 	}
 
-	err = c.EnableVersioning(bucketName)
+	err = c.EnableVersioning(context.Background(), bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Enable versioning failed", err)
 		return
@@ -1369,7 +1367,7 @@ func testRemoveObjectWithVersioning() {
 	objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
 	args["objectName"] = objectName
 
-	n, err := c.PutObject(bucketName, objectName, getDataReader("datafile-10-kB"), int64(dataFileMap["datafile-10-kB"]), minio.PutObjectOptions{})
+	n, err := c.PutObject(context.Background(), bucketName, objectName, getDataReader("datafile-10-kB"), int64(dataFileMap["datafile-10-kB"]), minio.PutObjectOptions{})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "PutObject failed", err)
 		return
@@ -1381,7 +1379,7 @@ func testRemoveObjectWithVersioning() {
 	}
 
 	doneCh := make(chan struct{})
-	objectsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+	objectsInfo := c.ListObjectVersions(context.Background(), bucketName, "", true, doneCh)
 	var version minio.ObjectVersionInfo
 	for info := range objectsInfo {
 		if info.Err != nil {
@@ -1392,20 +1390,20 @@ func testRemoveObjectWithVersioning() {
 		break
 	}
 
-	err = c.RemoveObjectWithOptions(bucketName, objectName, minio.RemoveObjectOptions{VersionID: version.VersionID})
+	err = c.RemoveObjectWithOptions(context.Background(), bucketName, objectName, minio.RemoveObjectOptions{VersionID: version.VersionID})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "DeleteObject failed", err)
 		return
 	}
 
 	doneCh = make(chan struct{})
-	objectsInfo = c.ListObjectVersions(bucketName, "", true, doneCh)
+	objectsInfo = c.ListObjectVersions(context.Background(), bucketName, "", true, doneCh)
 	for range objectsInfo {
 		logError(testName, function, args, startTime, "", "Unexpected versioning info, should not have any one ", err)
 		return
 	}
 
-	err = c.RemoveBucket(bucketName)
+	err = c.RemoveBucket(context.Background(), bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Cleanup failed", err)
 		return
@@ -1447,13 +1445,13 @@ func testRemoveObjectsWithVersioning() {
 	args["bucketName"] = bucketName
 
 	// Make a new bucket.
-	err = c.MakeBucketWithObjectLock(bucketName, "us-east-1")
+	err = c.MakeBucketWithObjectLock(context.Background(), bucketName, "us-east-1")
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Make bucket failed", err)
 		return
 	}
 
-	err = c.EnableVersioning(bucketName)
+	err = c.EnableVersioning(context.Background(), bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Enable versioning failed", err)
 		return
@@ -1462,7 +1460,7 @@ func testRemoveObjectsWithVersioning() {
 	objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
 	args["objectName"] = objectName
 
-	n, err := c.PutObject(bucketName, objectName, getDataReader("datafile-10-kB"), int64(dataFileMap["datafile-10-kB"]), minio.PutObjectOptions{})
+	n, err := c.PutObject(context.Background(), bucketName, objectName, getDataReader("datafile-10-kB"), int64(dataFileMap["datafile-10-kB"]), minio.PutObjectOptions{})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "PutObject failed", err)
 		return
@@ -1476,7 +1474,7 @@ func testRemoveObjectsWithVersioning() {
 	objectsVersions := make(chan minio.ObjectVersion)
 	go func() {
 		doneCh := make(chan struct{})
-		objectsVersionsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+		objectsVersionsInfo := c.ListObjectVersions(context.Background(), bucketName, "", true, doneCh)
 		for info := range objectsVersionsInfo {
 			if info.Err != nil {
 				logError(testName, function, args, startTime, "", "Unexpected error during listing objects", err)
@@ -1504,13 +1502,13 @@ func testRemoveObjectsWithVersioning() {
 	}
 
 	doneCh := make(chan struct{})
-	objectsVersionsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+	objectsVersionsInfo := c.ListObjectVersions(context.Background(), bucketName, "", true, doneCh)
 	for range objectsVersionsInfo {
 		logError(testName, function, args, startTime, "", "Unexpected versioning info, should not have any one ", err)
 		return
 	}
 
-	err = c.RemoveBucket(bucketName)
+	err = c.RemoveBucket(context.Background(), bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Cleanup failed", err)
 		return
@@ -1552,13 +1550,13 @@ func testObjectTaggingWithVersioning() {
 	args["bucketName"] = bucketName
 
 	// Make a new bucket.
-	err = c.MakeBucketWithObjectLock(bucketName, "us-east-1")
+	err = c.MakeBucketWithObjectLock(context.Background(), bucketName, "us-east-1")
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Make bucket failed", err)
 		return
 	}
 
-	err = c.EnableVersioning(bucketName)
+	err = c.EnableVersioning(context.Background(), bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "Enable versioning failed", err)
 		return
@@ -1568,7 +1566,7 @@ func testObjectTaggingWithVersioning() {
 	args["objectName"] = objectName
 
 	for _, file := range []string{"datafile-1-b", "datafile-10-kB"} {
-		n, err := c.PutObject(bucketName, objectName, getDataReader(file), int64(dataFileMap[file]), minio.PutObjectOptions{})
+		n, err := c.PutObject(context.Background(), bucketName, objectName, getDataReader(file), int64(dataFileMap[file]), minio.PutObjectOptions{})
 		if err != nil {
 			logError(testName, function, args, startTime, "", "PutObject failed", err)
 			return
@@ -1581,7 +1579,7 @@ func testObjectTaggingWithVersioning() {
 	}
 
 	doneCh := make(chan struct{})
-	versionsInfo := c.ListObjectVersions(bucketName, "", true, doneCh)
+	versionsInfo := c.ListObjectVersions(context.Background(), bucketName, "", true, doneCh)
 
 	var versions []minio.ObjectVersionInfo
 	for info := range versionsInfo {
