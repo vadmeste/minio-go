@@ -56,7 +56,6 @@ func main() {
 | [`MakeBucketWithObjectLock`](#MakeBucketWithObjectLock) | [`PutObject`](#PutObject)                                             | [`PutObject`](#PutObject)                         | [`PresignedPutObject`](#PresignedPutObject)   | [`GetBucketPolicy`](#GetBucketPolicy)                         | [`SetCustomTransport`](#SetCustomTransport)           |
 | [`ListBuckets`](#ListBuckets)                           | [`CopyObject`](#CopyObject)                                           | [`CopyObject`](#CopyObject)                       | [`PresignedPostPolicy`](#PresignedPostPolicy) | [`SetBucketNotification`](#SetBucketNotification)             | [`TraceOn`](#TraceOn)                                 |
 | [`BucketExists`](#BucketExists)                         | [`StatObject`](#StatObject)                                           | [`StatObject`](#StatObject)                       |                                               | [`GetBucketNotification`](#GetBucketNotification)             | [`TraceOff`](#TraceOff)                               |
-<<<<<<< HEAD
 | [`RemoveBucket`](#RemoveBucket)                         | [`RemoveObject`](#RemoveObject)                                       | [`FPutObject`](#FPutObject)                       |                                               | [`RemoveAllBucketNotification`](#RemoveAllBucketNotification) | [`SetS3TransferAccelerate`](#SetS3TransferAccelerate) |
 | [`ListObjects`](#ListObjects)                           | [`RemoveObjects`](#RemoveObjects)                                     | [`FGetObject`](#FGetObject)                       |                                               | [`ListenBucketNotification`](#ListenBucketNotification)       |                                                       |
 | [`ListObjectsV2`](#ListObjectsV2)                       | [`RemoveIncompleteUpload`](#RemoveIncompleteUpload)                   | [`ComposeObject`](#ComposeObjecet)                |                                               | [`SetBucketLifecycle`](#SetBucketLifecycle)                   |                                                       |
@@ -69,45 +68,13 @@ func main() {
 |                                                         | [`RemoveObjectWithOptions`](#RemoveObjectWithOptions)                 |                                                   |                                               | [`SetBucketEncryption`](#SetBucketEncryption)                 |                                                       |
 |                                                         | [`PutObjectRetention`](#PutObjectRetention)                           |                                                   |                                               | [`GetBucketEncryption`](#GetBucketEncryption)                 |                                                       |
 |                                                         | [`GetObjectRetention`](#GetObjectRetention)                           |                                                   |                                               | [`DeleteBucketEncryption`](#DeleteBucketEncryption)           |                                                       |
-=======
-| [`RemoveBucket`](#RemoveBucket)                         | [`RemoveObject`](#RemoveObject)                                       |                                                   |                                               | [`RemoveAllBucketNotification`](#RemoveAllBucketNotification) | [`SetS3TransferAccelerate`](#SetS3TransferAccelerate) |
-| [`ListObjects`](#ListObjects)                           | [`RemoveObjects`](#RemoveObjects)                                     |                                                   |                                               | [`ListenBucketNotification`](#ListenBucketNotification)       |                                                       |
-| [`ListObjectsV2`](#ListObjectsV2)                       | [`RemoveIncompleteUpload`](#RemoveIncompleteUpload)                   |                                                   |                                               | [`SetBucketLifecycle`](#SetBucketLifecycle)                   |                                                       |
-| [`ListObjectVersions`](#ListObjectVersions)       | [`FPutObject`](#FPutObject)                                           | [`FPutObject`](#FPutObject)                       |                                               | [`GetBucketLifecycle`](#GetBucketLifecycle)                   |                                                       |
-| [`ListIncompleteUploads`](#ListIncompleteUploads)                 | [`FGetObject`](#FGetObject)                                           | [`FGetObject`](#FGetObject)                       |                                               | [`SetObjectLockConfig`](#SetObjectLockConfig)                 |                                                       |
-| [`SetBucketTagging`](#SetBucketTagging)                 | [`ComposeObject`](#ComposeObject)                                     | [`ComposeObject`](#ComposeObject)                 |                                               | [`GetObjectLockConfig`](#GetObjectLockConfig)                 |                                                       |
-| [`GetBucketTagging`](#GetBucketTagging)           | [`NewSourceInfo`](#NewSourceInfo)                                     | [`NewSourceInfo`](#NewSourceInfo)                 |                                               | [`EnableVersioning`](#EnableVersioning)                       |                                                       |
-| [`DeleteBucketTagging`](#DeleteBucketTagging)      | [`NewDestinationInfo`](#NewDestinationInfo)                           | [`NewDestinationInfo`](#NewDestinationInfo)       |                                               | [`DisableVersioning`](#DisableVersioning)                     |                                                       |
-|                                                         | [`PutObjectWithContext`](#PutObjectWithContext)                       | [`PutObjectWithContext`](#PutObjectWithContext)   |                                               | [`GetBucketVersioning`](#GetBucketVersioning)                 |                                                       |
-|                                                         | [`GetObjectWithContext`](#GetObjectWithContext)                       | [`GetObjectWithContext`](#GetObjectWithContext)   |                                               | [`SetBucketEncryption`](#SetBucketEncryption)                 |                                                       |
-|                                                         | [`FPutObjectWithContext`](#FPutObjectWithContext)                     | [`FPutObjectWithContext`](#FPutObjectWithContext) |                                               | [`GetBucketEncryption`](#GetBucketEncryption)                 |                                                       |
-|                                                         | [`FGetObjectWithContext`](#FGetObjectWithContext)                     | [`FGetObjectWithContext`](#FGetObjectWithContext) |                                               | [`DeleteBucketEncryption`](#DeleteBucketEncryption)           |                                                       |
-|                                                         | [`RemoveObjectsWithContext`](#RemoveObjectsWithContext)               |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`RemoveObjectsWithOptions`](#RemoveObjectsWithOptions)               |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`RemoveObjectsWithVersions`](#RemoveObjectsWithVersions)               |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`RemoveObjectsWithOptionsContext`](#RemoveObjectsWithOptionsContext) |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`RemoveObjectWithOptions`](#RemoveObjectWithOptions)                 |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`PutObjectRetention`](#PutObjectRetention)                           |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`GetObjectRetention`](#GetObjectRetention)                           |                                                   |                                               |                                                               |                                                       |
->>>>>>> Add docs and examples
 |                                                         | [`PutObjectLegalHold`](#PutObjectLegalHold)                           |                                                   |                                               |                                                               |                                                       |
 |                                                         | [`GetObjectLegalHold`](#GetObjectLegalHold)                           |                                                   |                                               |                                                               |                                                       |
 |                                                         | [`SelectObjectContent`](#SelectObjectContent)                         |                                                   |                                               |                                                               |                                                       |
 |                                                         | [`PutObjectTagging`](#PutObjectTagging)                               |                                                   |                                               |                                                               |                                                       |
-<<<<<<< HEAD
 |                                                         | [`GetObjectTagging`](#GetObjectTagging)                               |                                                   |                                               |                                                               |                                                       |
 |                                                         | [`RemoveObjectTagging`](#RemoveObjectTagging)                         |                                                   |                                               |                                                               |                                                       |
 |                                                         |                                                                       |                                                   |                                               |                                                               |                                                       |
-=======
-|                                                         | [`PutObjectTaggingWithContext`](#PutObjectTaggingWithContext)         |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`PutObjectTaggingWithOptions`](#PutObjectTaggingWithOptions)         |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`GetObjectTagging`](#GetObjectTagging)                               |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`GetObjectTaggingWithContext`](#GetObjectTaggingWithContext)         |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`GetObjectTaggingWithOptions`](#GetObjectTaggingWithOptions)         |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`RemoveObjectTagging`](#RemoveObjectTagging)                         |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`RemoveObjectTaggingWithContext`](#RemoveObjectTaggingWithContext)   |                                                   |                                               |                                                               |                                                       |
-|                                                         | [`RemoveObjectTaggingWithOptions`](#RemoveObjectTaggingWithOptions)   |                                                   |                                               |                                                               |                                                       |
->>>>>>> Add docs and examples
 
 ## 1. Constructor
 <a name="MinIO"></a>
@@ -413,65 +380,6 @@ for object := range objectCh {
     fmt.Println(object)
 }
 ```
-
-<a name="ListObjectVersions"></a>
-### ListObjectVersions(bucketName, prefix string, recursive bool, doneCh chan struct{}) <-chan ObjectInfo
-Lists objects with their versions in a given bucket
-
-__Parameters__
-
-
-|Param   |Type   |Description   |
-|:---|:---| :---|
-|`bucketName`  | _string_  |Name of the bucket |
-|`prefix` |_string_   | Prefix of objects to be listed |
-|`recursive`  | _bool_  |`true` indicates recursive style listing and `false` indicates directory style listing delimited by '/'.  |
-|`doneCh`  | _chan struct{}_ | A message on this channel ends the ListObjectVersions iterator.  |
-
-
-__Return Value__
-
-|Param   |Type   |Description   |
-|:---|:---| :---|
-|`objectVersionInfo`  | _chan minio.ObjectVersionInfo_ | Read channel for all the objects and their versions in the bucket, the object version is of the format listed below |
-
-
-__minio.ObjectVersionInfo__
-
-|Field   |Type   |Description   |
-|:---|:---| :---|
-|`objVersionInfo.LastModified`  | _time.Time_  |Time when object was last modified |
-|`objVersionInfo.ETag` | _string_ |MD5 checksum of the object|
-|`objVersionInfo.VersionID` | _string_ | Content type of the object|
-|`objVersionInfo.Size` | _int64_ |Size of the object|
-|`objVersionInfo.Key` |  string | Name of the object |
-|`objVersionInfo.Owner` | _minio.Owner_ | The object's owner information |
-|`objVersionInfo.StorageClass` | _string_ | The object current storage class |
-|`objVersionInfo.IsLatest`    | _bool_ | `true` indicates the current version is the latest one |
-|`objVersionInfo.IsDeleteMarker` | _bool_ | `true` indicates the current version is an object in a deletion state |
-|`objVersionInfo.VersionID` | _string_ | The identifier of the current object version |
-|`objVersionInfo.Err` | _error_ | Indication of any listing error |
-
-
-
-```go
-// Create a done channel to control 'ListObjectVersions' go routine.
-doneCh := make(chan struct{})
-
-// Indicate to our routine to exit cleanly upon return.
-defer close(doneCh)
-
-isRecursive := true
-versionsCh := minioClient.ListObjectVersions("mybucket", "myprefix", isRecursive, doneCh)
-for objectVersion := range versionsCh {
-    if objectVersion.Err != nil {
-        fmt.Println(objectVersion.Err)
-        return
-    }
-    fmt.Println(objectVersion)
-}
-```
-
 
 <a name="ListIncompleteUploads"></a>
 ### ListIncompleteUploads(ctx context.Context, bucketName, prefix string, recursive bool, doneCh chan struct{}) <- chan ObjectMultipartInfo
@@ -1272,114 +1180,7 @@ objectsCh := make(chan string)
 go func() {
 	defer close(objectsCh)
 	// List all objects from a bucket-name with a matching prefix.
-<<<<<<< HEAD
 	for object := range minioClient.ListObjects(context.Background(), "my-bucketname", "my-prefixname", true, nil) {
-=======
-	for object := range minioClient.ListObjects("my-bucketname", "my-prefixname", true, nil) {
-		if object.Err != nil {
-			log.Fatalln(object.Err)
-		}
-		objectsCh <- object.Key
-	}
-}()
-
-opts := minio.RemoveObjectsOptions{
-	GovernanceBypass: true,
-}
-    
-for rErr := range minioClient.RemoveObjectsWithOptions("my-bucketname", objectsCh, opts) {
-    fmt.Println("Error detected during deletion: ", rErr)
-}
-```
-
-<a name="RemoveObjectsWithVersions"></a>
-### RemoveObjectsWithVersions(bucketName string, objectsCh <-chan ObjectVersion, opts RemoveObjectsOptions) <-chan RemoveObjectError
-Remove objects received from objectsCh. If the version identifier of a given object is not specified, remove the latest object version.
-
-Parameters
-
-|Param   |Type   |Description   |
-|:---|:---| :---|
-|`bucketName` | _string_ | Name of the bucket  |
-|`objectsCh` | _chan minio.ObjectVersion_ | Channel of objects and versions to be removed  |
-|`opts` | _minio.RemoveObjectsOptions_ | Objects deletion general options |
-
-__minio.RemoveObjectVersion__
-
-|Field | Type | Description |
-|:--- |:--- | :--- |
-| `opts.Key` | _string_ | Set the bypass governance header to delete an object locked with GOVERNANCE mode|
-| `opts.VersionID` | _string_ | Set the bypass governance header to delete an object locked with GOVERNANCE mode|
-
-
-__minio.RemoveObjectsOptions__
-
-|Field | Type | Description |
-|:--- |:--- | :--- |
-| `opts.GovernanceBypass` | _bool_ |Set the bypass governance header to delete an object locked with GOVERNANCE mode|
-
-__Return Values__
-
-|Param   |Type   |Description   |
-|:---|:---| :---|
-|`errorCh` | _<-chan minio.RemoveObjectError_  | Receive-only channel of errors observed during deletion.  |
-
-```go
-objectVersionsCh := make(chan minio.ObjectVersion)
-
-// Send object names that are needed to be removed to objectsCh
-go func() {
-	defer close(objectVersionsCh)
-	// List all objects with their versions from a bucket-name with a matching prefix.
-	for objectVersion := range minioClient.ListObjectVersions("my-bucketname", "my-prefixname", true, nil) {
-		if objectVersion.Err != nil {
-			log.Fatalln(objectVersion.Err)
-		}
-		objectVersionsCh <- objectVersion.Key
-	}
-}()
-
-opts := minio.RemoveObjectsOptions{
-	GovernanceBypass: true,
-}
-
-for rErr := range minioClient.RemoveObjectsWithVersions("my-bucketname", objectVersionsCh, opts) {
-    fmt.Println("Error detected during deletion: ", rErr)
-}
-```
-
-
-
-<a name="RemoveObjectsWithOptionsContext"></a>
-### RemoveObjectsWithOptionsContext(ctx context.Context, bucketName string, objectsCh <-chan string, opts RemoveObjectsOptions) <-chan RemoveObjectError
-*Identical to RemoveObjectsWithContext operation, but accepts opts for bypassing Governance mode.*
-
-Parameters
-
-|Param   |Type   |Description   |
-|:---|:---| :---|
-|`ctx`  | _context.Context_  |Request context  |
-|`bucketName`  | _string_  |Name of the bucket  |
-|`objectsCh` |  _chan string_  | Channel of objects to be removed  |
-|`opts` |_minio.RemoveObjectsOptions_ | Allows user to set options |
-
-__Return Values__
-
-|Param   |Type   |Description   |
-|:---|:---| :---|
-|`errorCh` | _<-chan minio.RemoveObjectError_  | Receive-only channel of errors observed during deletion.  |
-
-```go
-objectsCh := make(chan string)
-ctx, cancel := context.WithTimeout(context.Background(), 100 * time.Second)
-defer cancel()
-
-// Send object names that are needed to be removed to objectsCh
-go func() {
-	defer close(objectsCh)
-	// List all objects from a bucket-name with a matching prefix.
-	for object := range minioClient.ListObjects("my-bucketname", "my-prefixname", true, nil) {
->>>>>>> Add docs and examples
 		if object.Err != nil {
 			log.Fatalln(object.Err)
 		}
@@ -1543,74 +1344,12 @@ __Example__
 
 
 ```go
-<<<<<<< HEAD
 err = minioClient.PutObjectTagging(context.Background(), bucketName, objectName, objectTags)
-=======
-err = minioClient.PutObjectTagging(bucketName, objectName, objectTags)
 if err != nil {
     fmt.Println(err)
     return
 }
 ```
-
-<a name="PutObjectTaggingWithContext"></a>
-### PutObjectTaggingWithContext(ctx context.Context, bucketName, objectName string, objectTags map[string]string) error
-Identical to PutObjectTagging, but allows setting context to allow controlling context cancellations and timeouts.
-
-__Parameters__
-
-
-|Param   |Type   |Description   |
-|:---|:---| :---|
-|`ctx`  | _context.Context_  |Request context  |
-|`bucketName`  | _string_  |Name of the bucket   |
-|`objectName` | _string_  |Name of the object   |
-|`objectTags` | _map[string]string_ | Map with Object Tag's Key and Value |
-
-__Example__
-
-
-```go
-err = minioClient.PutObjectTaggingWithContext(ctx, bucketName, objectName, objectTags)
->>>>>>> Add docs and examples
-if err != nil {
-    fmt.Println(err)
-    return
-}
-```
-<a name="PutObjectTaggingWithOptions"></a>
-### PutObjectTaggingWithOptions(ctx context.Context, bucketName, objectName string, objectTags map[string]string, opts PutObjectTaggingOptions) error
-Identical to PutObjectTaggingWithContext, but allows setting a specific version of the target object.
-
-__Parameters__
-
-|Param   |Type   |Description   |
-|:---|:---| :---|
-|`ctx`  | _context.Context_  |Request context  |
-|`bucketName`  | _string_  |Name of the bucket   |
-|`objectName` | _string_  |Name of the object   |
-|`objectTags` | _map[string]string_ | Map with Object Tag's Key and Value |
-|`opts` | _minio.PutObjectTaggingOptions_ | Custom operation options |
-
-
-__minio.PutObjectTaggingOptions__
-
-|Field   |Type   |Description   |
-|:---|:---| :---|
-|`VersionID`  | _string_  | The version identifier of the target object |
-
-
-__Example__
-
-```go
-opts := minio.PutObjectTaggingOptions{VersionID: objectVersionID}
-err := minioClient.PutObjectTaggingWithOptions(ctx, bucketName, objectName, objectTags, ops)
-if err != nil {
-    fmt.Println(err)
-    return
-}
-```
-
 
 <a name="GetObjectTagging"></a>
 ### GetObjectTagging(ctx context.Context, bucketName, objectName string) (string, error)
@@ -1637,41 +1376,6 @@ if err != nil {
 fmt.Printf("Fetched Tags: %s", tags)
 ```
 
-<a name="GetObjectTaggingWithOptions"></a>
-### GetObjectTaggingWithOptions(ctx context.Context, bucketName, objectName string, opts GetObjectTaggingOptions) (string, error)
-Identical to GetObjectTaggingWithContext, but allows setting a specific version of the target object.
-
-__Parameters__
-
-
-|Param   |Type   |Description   |
-|:---|:---| :---|
-|`ctx`  | _context.Context_  |Request context  |
-|`bucketName`  | _string_  |Name of the bucket   |
-|`objectName` | _string_  |Name of the object   |
-|`opts` | _minio.GetObjectTaggingOptions_  | Custom operation options   |
-
-__minio.GetObjectTaggingOptions__
-
-|Field   |Type   |Description   |
-|:---|:---| :---|
-|`VersionID`  | _string_  | The version identifier of the target object |
-
-
-__Example__
-
-
-```go
-opts := minio.GetObjectTaggingOptions{VersionID: objectVersionID}
-tags, err = :minioClient.GetObjectTaggingWithOptions(ctx, bucketName, objectName, ops)
-if err != nil {
-    fmt.Println(err)
-    return
-}
-fmt.Printf("Fetched Tags: %s", tags)
-```
-
-
 <a name="RemoveObjectTagging"></a>
 ### RemoveObjectTagging(ctx context.Context, bucketName, objectName string) error
 Remove Object Tags from the given object
@@ -1695,40 +1399,6 @@ if err != nil {
     return
 }
 ```
-
-<a name="RemoveObjectTaggingWithOptions"></a>
-### RemoveObjectTaggingWithOptions(ctx context.Context, bucketName, objectName string, opts RemoveObjectTaggingOptions) error
-Identical to RemoveObjectTaggingWithContext, but allows setting a specific version of the target object.
-
-__Parameters__
-
-
-|Param   |Type   |Description   |
-|:---|:---| :---|
-|`ctx`  | _context.Context_  |Request context  |
-|`bucketName`  | _string_  |Name of the bucket   |
-|`objectName` | _string_  |Name of the object   |
-|`opts` | _minio.RemoveObjectTaggingOptions_  | Custom operation options  |
-
-__minio.RemoveObjectTaggingOptions__
-
-|Field   |Type   |Description   |
-|:---|:---| :---|
-|`VersionID`  | _string_  | The version identifier of the target object |
-
-
-__Example__
-
-
-```go
-opts := minio.RemoveObjectTaggingOptions{VersionID: objectVersionID}
-err := minioClient.RemoveObjectTaggingWithOptions(ctx, bucketName, objectName, opts)
-if err != nil {
-    fmt.Println(err)
-    return
-}
-```
-
 
 <a name="RemoveIncompleteUpload"></a>
 ### RemoveIncompleteUpload(ctx context.Context, bucketName, objectName string) error
