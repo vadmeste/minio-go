@@ -23,7 +23,7 @@ import (
 	"math"
 	"os"
 
-	"github.com/minio/minio-go/v7/pkg/s3utils"
+	"github.com/vadmeste/minio-go/v7/pkg/s3utils"
 )
 
 // Verify if reader is *minio.Object
