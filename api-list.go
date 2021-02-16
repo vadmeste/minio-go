@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/minio/minio-go/v7/pkg/s3utils"
+	"github.com/vadmeste/minio-go/v7/pkg/s3utils"
 )
 
 // ListBuckets list all buckets owned by this authenticated user.
