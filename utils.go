@@ -36,7 +36,7 @@ import (
 	"time"
 
 	md5simd "github.com/minio/md5-simd"
-	"github.com/minio/minio-go/v7/pkg/s3utils"
+	"github.com/vadmeste/minio-go/v7/pkg/s3utils"
 	"github.com/minio/sha256-simd"
 )
 

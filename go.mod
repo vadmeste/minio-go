@@ -1,6 +1,6 @@
-module github.com/minio/minio-go/v7
+module github.com/vadmeste/minio-go
 
-go 1.12
+go 1.16
 
 require (
 	github.com/cheggaaa/pb v1.0.29 // indirect

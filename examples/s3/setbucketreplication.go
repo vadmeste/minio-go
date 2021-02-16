@@ -24,9 +24,9 @@ import (
 	"encoding/xml"
 	"log"
 
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/minio/minio-go/v7/pkg/replication"
+	"github.com/vadmeste/minio-go/v7"
+	"github.com/vadmeste/minio-go/v7/pkg/credentials"
+	"github.com/vadmeste/minio-go/v7/pkg/replication"
 )
 
 func main() {
