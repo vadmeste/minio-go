@@ -22,44 +22,40 @@ package main
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/minio/minio-go/v7/pkg/lifecycle"
 )
 
 func main() {
-	// Note: YOUR-ACCESSKEYID, YOUR-SECRETACCESSKEY and my-bucketname are
-	// dummy values, please replace them with original values.
 
-	// Requests are always secure (HTTPS) by default. Set secure=false to enable insecure (HTTP) access.
-	// This boolean value is the last argument for New().
+	serverEndpoint := os.Getenv("SERVER_ENDPOINT")
+	accessKey := os.Getenv("ACCESS_KEY")
+	secretKey := os.Getenv("SECRET_KEY")
+	secure := os.Getenv("ENABLE_TLS") == "1"
 
-	// New returns an Amazon S3 compatible client object. API compatibility (v2 or v4) is automatically
-	// determined based on the Endpoint value.
-	s3Client, err := minio.New("s3.amazonaws.com", &minio.Options{
-		Creds:  credentials.NewStaticV4("YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", ""),
-		Secure: true,
+	s3Client, err := minio.New(serverEndpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: secure,
 	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	bucket := os.Args[1]
+	path := os.Args[2]
+
+	buf, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// s3Client.TraceOn(os.Stderr)
 
-	// Set lifecycle on a bucket
-	config := lifecycle.NewConfiguration()
-	config.Rules = []lifecycle.Rule{
-		{
-			ID:     "expire-bucket",
-			Status: "Enabled",
-			Expiration: lifecycle.Expiration{
-				Days: 365,
-			},
-		},
-	}
-	err = s3Client.SetBucketLifecycle(context.Background(), "my-bucketname", config)
+	err = s3Client.SetBucketLifecycleFromXML(context.Background(), bucket, buf)
 	if err != nil {
 		log.Fatalln(err)
 	}

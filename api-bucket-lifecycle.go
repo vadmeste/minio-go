@@ -31,6 +31,17 @@ import (
 )
 
 // SetBucketLifecycle set the lifecycle on an existing bucket.
+func (c *Client) SetBucketLifecycleFromXML(ctx context.Context, bucketName string, buf []byte) error {
+	// Input validation.
+	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
+		return err
+	}
+
+	// Save the updated lifecycle.
+	return c.putBucketLifecycle(ctx, bucketName, buf)
+}
+
+// SetBucketLifecycle set the lifecycle on an existing bucket.
 func (c *Client) SetBucketLifecycle(ctx context.Context, bucketName string, config *lifecycle.Configuration) error {
 	// Input validation.
 	if err := s3utils.CheckValidBucketName(bucketName); err != nil {
